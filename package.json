@@ -1,0 +1,15 @@
+{
+    "name": "DDC2-DEV",
+    "description": "A Node-RED Project",
+    "version": "0.0.1",
+    "dependencies": {
+        "node-red-node-rbe": "0.2.9",
+        "node-red-contrib-discord": "4.0.3"
+    },
+    "node-red": {
+        "settings": {
+            "flowFile": "DDC2-DEV.json",
+            "credentialsFile": "DDC2-DEV_cred.json"
+        }
+    }
+}
