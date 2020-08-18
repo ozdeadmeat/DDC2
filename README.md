@@ -12,3 +12,12 @@ YouTube: https://www.youtube.com/ozdeadmeat
 Patreon: https://www.patreon.com/ozdeadmeat
 
 Trello KAMBAN Board: https://trello.com/b/NerHUp2T/ddc2
+
+
+Special Thanks - 
+
+AEF Wedgie for his knowledge of Node-Red and integration expertise and patience.
+
+AEF Zyfr for his wealth of knowledge regarding all things DCS and LUA.
+
+AEF MrPing for his knowledge in all things DCS Dedicated Server.
