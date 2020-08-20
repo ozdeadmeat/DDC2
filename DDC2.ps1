@@ -1,12 +1,13 @@
 <#
 DCS Controller Script for Node-Red & Discord Interaction
-# Version 1.0
+# Version 1.054
 # Writen by OzDeaDMeaT
-# 17-07-2020
+# 20-08-2020
 ####################################################################################################
 #CHANGE LOG#########################################################################################
 ####################################################################################################
 - Splitting out Report to multiple Functions
+- Added New-Firewall-RDPPort Function to assist in installation when changing RDP Ports from Default
 ####################################################################################################
 #>
 
@@ -421,7 +422,7 @@ write-log -LogData "Change-Firewall-RDP: STARTED" -Silent
 write-log -LogData "Change-Firewall-RDP Started for $USER with Discord ID of $DiscordID for IP:$IP" -Silent
 $outputVar = $null
 $RDPPort = (Get-Item "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp").GetValue('PortNumber')
-$RULEPREFIX = 'DCS_CNC - '
+$RULEPREFIX = 'DDC2 - '
 $WILDCARD = "$RULEPREFIX*"
 $Time = get-date -Format "yyyy-MMM-dd--HH:mm:ss"
 $RULE_NAME_PREFIX = "$RULEPREFIX$DiscordID -"
@@ -492,6 +493,33 @@ write-log -LogData $OutputVar -Silent
 write-log -LogData "Change-Firewall-RDP: ENDED" -Silent
 return $OutputVar
 }
+Function New-Firewall-RDPPort {
+Param (
+[string]$IP = ''
+)
+write-log -LogData "New-Firewall-RDPPort Started"
+$RDPPort = (Get-Item "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp").GetValue('PortNumber')
+$RULE_NAME_PREFIX = "RDP Port - $RDPPort --" 
+$Octet = '(?:0?0?[0-9]|0?[1-9][0-9]|1[0-9]{2}|2[0-5][0-5]|2[0-4][0-9])'
+[regex] $IPv4Regex = "^(?:$Octet\.){3}$Octet$"
+$checkIP = $IP -match $IPv4Regex
+if($CheckIP) {
+	#check if the rules currently exist
+	$currentRules = (get-NetFirewallRule -Name "$RULE_NAME_PREFIX *" | Measure-Object).count
+	if($currentRules -gt 0) {
+		get-NetFirewallRule -Name "$RULE_NAME_PREFIX *" | remove-NetFirewallRule
+		write-log -LogData "Old Firewall Rules Found, removing..." -Silent
+		Start-sleep 1
+		}		
+	$shhh = New-NetFirewallRule -Name "$RULE_NAME_PREFIX TCP" -DisplayName "$RULE_NAME_PREFIX TCP" -Description $RULE_DESCRIPTION -Direction Inbound -LocalPort $RDPPort -Protocol TCP -RemoteAddress $IP -Action Allow -Program %SystemRoot%\system32\svchost.exe -Group 'Remote Desktop'
+	$shhh = New-NetFirewallRule -Name "$RULE_NAME_PREFIX UDP" -DisplayName "$RULE_NAME_PREFIX UDP" -Description $RULE_DESCRIPTION -Direction Inbound -LocalPort $RDPPort -Protocol UDP -RemoteAddress $IP -Action Allow -Program %SystemRoot%\system32\svchost.exe -Group 'Remote Desktop'
+	$shhh = New-NetFirewallRule -Name "$RULE_NAME_PREFIX Shadow TCP" -DisplayName "$RULE_NAME_PREFIX Shadow TCP" -Description $RULE_DESCRIPTION -Direction Inbound -Protocol TCP -RemoteAddress $IP -Action Allow -Program %SystemRoot%\system32\RdpSa.exe -Group 'Remote Desktop'
+	}
+write-log -LogData "New-Firewall-RDPPort Finished"
+}
+
+
+
 Function Reboot-Server {
 	write-log -LogData "--------------------------------------------------------" -Silent
 	write-log -LogData "REBOOT STARTED..." -Silent
