@@ -1,6 +1,6 @@
 <#
 DCS Controller Script for Node-Red & Discord Interaction
-# Version 1.162
+# Version 1.163a
 # Writen by OzDeaDMeaT
 # 23-08-2020
 ####################################################################################################
@@ -9,6 +9,7 @@ DCS Controller Script for Node-Red & Discord Interaction
 - Splitting out Report to multiple Functions
 - Added New-Firewall-RDPPort Function to assist in installation when changing RDP Ports from Default
 - Added Check-DDC2-PS Function to check variables that are set in DDC2.ps1 File
+- Fixed Bug where SRS Server Install does not generate an entry.lua, Version data collection now done via SRS Executable instead.
 ####################################################################################################
 #>
 
@@ -208,12 +209,12 @@ if (test-path $srsEXE) {
 	write-host " - $srsEXE" -ForegroundColor yellow
 	} else {write-host "Not Found" -ForegroundColor red}
 	
-write-host '$SRS_Entry 	== ' -nonewline -ForegroundColor white
+<#write-host '$SRS_Entry 	== ' -nonewline -ForegroundColor white
 if (test-path $SRS_Entry) {
 	write-host "OK" -nonewline -ForegroundColor green
 	write-host " - $SRS_Entry" -ForegroundColor yellow
 	} else {write-host "Not Found" -ForegroundColor red}
-	
+#>	
 write-host '$SRS_Config 	== ' -nonewline -ForegroundColor white
 if (test-path $SRS_Config) {
 	write-host "OK" -nonewline -ForegroundColor green
@@ -535,7 +536,11 @@ $SRV_config | Add-Member -MemberType NoteProperty -Name Tacview -Value $TACv_Set
 ##SRS
 $SRS_Settings = $null
 $SRS_Settings = New-Object -TypeName psobject	
-$SRS_Version = if(test-path $SRS_Entry) {(Select-String -Path $SRS_Entry -Pattern "version" | Out-String).Split('"')[-2]} else {'NOT INSTALLED'}
+$SRS_Version = if(test-path $SRS_Entry) {
+	(Select-String -Path $SRS_Entry -Pattern "version" | Out-String).Split('"')[-2]}
+else {
+	if(test-path $srsEXE) {(Get-ChildItem $srsEXE).VersionInfo.ProductVersion} else {'NOT INSTALLED'}
+	}
 if(test-path $SRS_Config) {
 	$SRS_Port 	= ((Select-String -Path $SRS_Config -Pattern "SERVER_PORT=" | Out-String).Split('=')[1]).Trim()
 	$SRS_BluePW = ((Select-String -Path $SRS_Config -Pattern "EXTERNAL_AWACS_MODE_BLUE_PASSWORD=" | Out-String).Split('=')[1]).Trim()
