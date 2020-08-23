@@ -35,7 +35,7 @@ $BETA 				= $TRUE																						#Set this variable if you wish to use the
 #ADMIN CONFIGURATION SECTION########################################################################
 ####################################################################################################
 $PS_LogFile			= "G:\GameServer\DDC2\DDC2.log" 															#Log File Location for this script
-$DCS_Profile 		= "C:\Users\c0rnerst0ne\Saved Games\DCS.server"			 									#DCS Server Profile Path
+$DCS_Profile 		= "C:\Users\<username>\Saved Games\DCS.server"			 									#DCS Server Profile Path
 $dcsDIR 			= "G:\GameServer\DCS World Server"			 												#DCS Install Location
 $srsDIR 			= "G:\GameServer\SRS"						 												#SRS Installation Location
 $LotDIR 			= "G:\GameServer\LotAtc" 																	#LotATC Installation Location
