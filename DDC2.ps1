@@ -1,13 +1,14 @@
 <#
 DCS Controller Script for Node-Red & Discord Interaction
-# Version 1.154
+# Version 1.162
 # Writen by OzDeaDMeaT
-# 20-08-2020
+# 23-08-2020
 ####################################################################################################
 #CHANGE LOG#########################################################################################
 ####################################################################################################
 - Splitting out Report to multiple Functions
 - Added New-Firewall-RDPPort Function to assist in installation when changing RDP Ports from Default
+- Added Check-DDC2-PS Function to check variables that are set in DDC2.ps1 File
 ####################################################################################################
 #>
 
@@ -33,11 +34,11 @@ $BETA 				= $TRUE																						#Set this variable if you wish to use the
 #ADMIN CONFIGURATION SECTION########################################################################
 ####################################################################################################
 $PS_LogFile			= "G:\GameServer\DDC2\DDC2.log" 															#Log File Location for this script
-$DCS_Profile 		= 'C:\Users\<username>\Saved Games\DCS.openbeta_server' 									#DCS Server Profile Path
+$DCS_Profile 		= "C:\Users\c0rnerst0ne\Saved Games\DCS.server"			 									#DCS Server Profile Path
 $dcsDIR 			= "G:\GameServer\DCS World Server"			 												#DCS Install Location
-$srsDIR 			= "G:\GameServer\DCS-SimpleRadio-Standalone" 												#SRS Installation Location
+$srsDIR 			= "G:\GameServer\SRS"						 												#SRS Installation Location
 $LotDIR 			= "G:\GameServer\LotAtc" 																	#LotATC Installation Location
-#$TacvDIR 			= "G:\GameServer\Tacview" 																	#Tacview Installation Location
+$TacvDIR 			= "G:\GameServer\Tacview" 																	#Tacview Installation Location
 
 #The Variabled below should not need configuration but are listed here if you need to configure them.
 $dcsBIN				= "$dcsDIR\bin" 																			#DCS Bin Folder
@@ -48,7 +49,7 @@ $dcsargs 			= "--server --norender" 																	#DCS Server Arguments
 $DCS_Updater 		= "$dcsBIN\dcs_updater.exe" 																#DCS Updater Executable
 $DCS_Updater_Args 	= if($BETA) {"update @openbeta"} else {"update @release"}									#DCS Updater Arguments
 
-#$TacvEXE 			= "$TacvDIR\Tacview64.exe" 																	#Tacview Executable
+$TacvEXE 			= "$TacvDIR\Tacview64.exe" 																	#Tacview Executable
 $TACv_Entry 		= "$DCS_Profile\Mods\Tech\Tacview\entry.lua"												#Tacview Entry Data
 $TACv_Config 		= "$DCS_Profile\Config\options.lua"															#Tacview Configuration File
 
@@ -79,7 +80,6 @@ $DCSreturn = $null
 $DCSreturnJSON = $null
 $selection = 'Name', 'ProcessName', 'PriorityClass', 'ProductVersion', 'Responding', 'StartTime', @{Name='Ticks';Expression={$_.TotalProcessorTime.Ticks}}, @{Name='MemGB';Expression={'{00:N2}' -f ($_.WorkingSet/1GB)}}
 ####################################################################################################
-
 Function Write-Log {
 <# 
 .DESCRIPTION 
@@ -125,6 +125,179 @@ if ($LogData -ne "") {
 			}
 		}
 	} 
+}
+
+Function Check-DDC2-PS {
+<# 
+.DESCRIPTION 
+This function checks that all the config files etc have been entered correctly into the DDC2 Powershell script
+ 
+.EXAMPLE
+Check-DDC2-PS
+#>
+write-host "Reloading DDC2.ps1 file into memory"
+. .\DDC2.ps1
+write-host "Checking DDC2.ps1 admin entered file paths...." -ForegroundColor white
+write-log -LogData "Checking DDC2.ps1 admin entered file paths...." -silent
+####################################################################################################
+write-host '$PS_LogFile	== ' -nonewline -ForegroundColor white
+if (test-path $PS_LogFile) {
+	write-host "OK" -nonewline -ForegroundColor green
+	write-host " - $PS_LogFile" -ForegroundColor yellow
+	} else {write-host "Not Found" -ForegroundColor red}
+####################################################################################################
+write-host " "
+write-host "Checking all DCS Variables...." -ForegroundColor white
+
+write-host '$DCS_Profile 	== ' -nonewline -ForegroundColor white
+if (test-path $DCS_Profile) {
+	write-host "OK" -nonewline -ForegroundColor green
+	write-host " - $DCS_Profile" -ForegroundColor yellow
+	} else {write-host "Not Found" -ForegroundColor red}
+
+write-host '$DCS_Config 	== ' -nonewline -ForegroundColor white
+if (test-path $DCS_Config) {
+	write-host "OK" -nonewline -ForegroundColor green
+	write-host " - $DCS_Config" -ForegroundColor yellow
+	} else {write-host "Not Found" -ForegroundColor red}
+	
+write-host '$DCS_AutoE	== ' -nonewline -ForegroundColor white
+if (test-path $DCS_AutoE) {
+	write-host "OK" -nonewline -ForegroundColor green
+	write-host " - $DCS_AutoE" -ForegroundColor yellow
+	} else {write-host "Not Found" -ForegroundColor red}
+	
+write-host '$dcsDIR 	== ' -nonewline -ForegroundColor white
+if (test-path $dcsDIR) {
+	write-host "OK" -nonewline -ForegroundColor green
+	write-host " - $dcsDIR" -ForegroundColor yellow
+	} else {write-host "Not Found" -ForegroundColor red}
+
+write-host '$dcsBIN		== ' -nonewline -ForegroundColor white
+if (test-path $dcsBIN) {
+	write-host "OK" -nonewline -ForegroundColor green
+	write-host " - $dcsBIN" -ForegroundColor yellow
+	} else {write-host "Not Found" -ForegroundColor red}
+
+write-host '$dcsEXE 	== ' -nonewline -ForegroundColor white
+if (test-path $dcsEXE) {
+	write-host "OK" -nonewline -ForegroundColor green
+	write-host " - $dcsEXE" -ForegroundColor yellow
+	} else {write-host "Not Found" -ForegroundColor red}
+
+write-host '$DCS_Updater 	== ' -nonewline -ForegroundColor white
+if (test-path $DCS_Updater) {
+	write-host "OK" -nonewline -ForegroundColor green
+	write-host " - $DCS_Updater" -ForegroundColor yellow
+	} else {write-host "Not Found" -ForegroundColor red}
+#END DCS Variables
+####################################################################################################
+#Start SRS Variables
+write-host " "
+write-host "Checking all SRS Variables...." -ForegroundColor white
+
+write-host '$srsDIR 	== ' -nonewline -ForegroundColor white
+if (test-path $srsDIR) {
+	write-host "OK" -nonewline -ForegroundColor green
+	write-host " - $srsDIR" -ForegroundColor yellow
+	} else {write-host "Not Found" -ForegroundColor red}
+
+write-host '$srsEXE 	== ' -nonewline -ForegroundColor white
+if (test-path $srsEXE) {
+	write-host "OK" -nonewline -ForegroundColor green
+	write-host " - $srsEXE" -ForegroundColor yellow
+	} else {write-host "Not Found" -ForegroundColor red}
+	
+write-host '$SRS_Entry 	== ' -nonewline -ForegroundColor white
+if (test-path $SRS_Entry) {
+	write-host "OK" -nonewline -ForegroundColor green
+	write-host " - $SRS_Entry" -ForegroundColor yellow
+	} else {write-host "Not Found" -ForegroundColor red}
+	
+write-host '$SRS_Config 	== ' -nonewline -ForegroundColor white
+if (test-path $SRS_Config) {
+	write-host "OK" -nonewline -ForegroundColor green
+	write-host " - $SRS_Config" -ForegroundColor yellow
+	} else {write-host "Not Found" -ForegroundColor red}
+	
+write-host '$SRS_AutoConnect== ' -nonewline -ForegroundColor white
+if (test-path $SRS_AutoConnect) {
+	write-host "OK" -nonewline -ForegroundColor green
+	write-host " - $SRS_AutoConnect" -ForegroundColor yellow
+	} else {write-host "Not Found" -ForegroundColor red}
+	
+write-host '$SRS_Updater	== ' -nonewline -ForegroundColor white
+if (test-path $SRS_Updater) {
+	write-host "OK" -nonewline -ForegroundColor green
+	write-host " - $SRS_Updater" -ForegroundColor yellow
+	} else {write-host "Not Found" -ForegroundColor red}
+#END SRS Variables
+####################################################################################################
+#Start LotATC Variables
+write-host " "
+write-host "Checking all LotATC Variables...." -ForegroundColor white
+
+write-host '$LotDIR 	== ' -nonewline -ForegroundColor white
+if (test-path $LotDIR) {
+	write-host "OK" -nonewline -ForegroundColor green
+	write-host " - $LotDIR" -ForegroundColor yellow
+	} else {write-host "Not Found" -ForegroundColor red}
+
+write-host '$Lot_Entry 	== ' -nonewline -ForegroundColor white
+if (test-path $Lot_Entry) {
+	write-host "OK" -nonewline -ForegroundColor green
+	write-host " - $Lot_Entry" -ForegroundColor yellow
+	} else {write-host "Not Found" -ForegroundColor red}
+	
+write-host '$Lot_Config 	== ' -nonewline -ForegroundColor white
+if (test-path $Lot_Config) {
+	write-host "OK" -nonewline -ForegroundColor green
+	write-host " - $Lot_Config" -ForegroundColor yellow
+	} else {write-host "Not Found" -ForegroundColor red}
+	
+write-host '$Lot_Updater 	== ' -nonewline -ForegroundColor white
+if (test-path $Lot_Updater) {
+	write-host "OK" -nonewline -ForegroundColor green
+	write-host " - $Lot_Updater" -ForegroundColor yellow
+	} else {write-host "Not Found" -ForegroundColor red}
+	
+write-host '$LotDIR 	== ' -nonewline -ForegroundColor white
+if (test-path $LotDIR) {
+	write-host "OK" -nonewline -ForegroundColor green
+	write-host " - $LotDIR" -ForegroundColor yellow
+	} else {write-host "Not Found" -ForegroundColor red}
+#END LotATC Variables
+####################################################################################################
+#Start TACView Variables
+write-host " "
+write-host "Checking all TACView Variables...." -ForegroundColor white
+
+write-host '$TacvDIR 	== ' -nonewline -ForegroundColor white
+if (test-path $TacvDIR) {
+	write-host "OK" -nonewline -ForegroundColor green
+	write-host " - $TacvDIR" -ForegroundColor yellow
+	} else {write-host "Not Found" -ForegroundColor red}
+
+write-host '$TacvEXE 	== ' -nonewline -ForegroundColor white
+if (test-path $TacvEXE) {
+	write-host "OK" -nonewline -ForegroundColor green
+	write-host " - $TacvEXE" -ForegroundColor yellow
+	} else {write-host "Not Found" -ForegroundColor red}
+
+write-host '$TACv_Entry 	== ' -nonewline -ForegroundColor white
+if (test-path $TACv_Entry) {
+	write-host "OK" -nonewline -ForegroundColor green
+	write-host " - $TACv_Entry" -ForegroundColor yellow
+	} else {write-host "Not Found" -ForegroundColor red}
+	
+write-host '$TACv_Config 	== ' -nonewline -ForegroundColor white
+if (test-path $TACv_Config) {
+	write-host "OK" -nonewline -ForegroundColor green
+	write-host " - $TACv_Config" -ForegroundColor yellow
+	} else {write-host "Not Found" -ForegroundColor red}
+write-host " "
+write-host "Check Complete...." -ForegroundColor white
+write-host " "	
 }
 
 Function Check-Update { 
