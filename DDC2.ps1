@@ -10,6 +10,7 @@ DCS Controller Script for Node-Red & Discord Interaction
 - Added New-Firewall-RDPPort Function to assist in installation when changing RDP Ports from Default
 - Added Check-DDC2-PS Function to check variables that are set in DDC2.ps1 File
 - Fixed Bug where SRS Server Install does not generate an entry.lua, Version data collection now done via SRS Executable instead.
+- Changed <username> on line 38 to say UserNameGoesHere as to avoid script error on initial run
 ####################################################################################################
 #>
 
