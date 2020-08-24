@@ -1,6 +1,6 @@
 <#
 DCS Controller Script for Node-Red & Discord Interaction
-# Version 1.163c
+# Version 1.163d
 # Writen by OzDeaDMeaT
 # 24-08-2020
 ####################################################################################################
