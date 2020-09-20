@@ -1,12 +1,13 @@
 <#
 DCS Controller Script for Node-Red & Discord Interaction
-# Version 1.163d
+# Version 1.172e
 # Writen by OzDeaDMeaT
-# 24-08-2020
+# 20-09-2020
 ####################################################################################################
 #CHANGE LOG#########################################################################################
 ####################################################################################################
 - Splitting out Report to multiple Functions
+- Added VNC Server to !access capability (Change-Firewall-RDP)
 - Added New-Firewall-RDPPort Function to assist in installation when changing RDP Ports from Default
 - Added Check-DDC2-PS Function to check variables that are set in DDC2.ps1 File
 - Fixed Bug where SRS Server Install does not generate an entry.lua, Version data collection now done via SRS Executable instead.
@@ -24,6 +25,7 @@ param(
 [switch]$Report,
 [switch]$Secure,
 [switch]$Access,
+[switch]$VNC,
 [switch]$ClearAll,
 [string]$IP,
 [string]$USER,
@@ -36,9 +38,12 @@ $BETA 				= $TRUE																						#Set this variable if you wish to use the
 #ADMIN CONFIGURATION SECTION########################################################################
 ####################################################################################################
 $PS_LogFile			= "G:\GameServer\DDC2\DDC2.log" 															#Log File Location for this script
-$DCS_Profile 		= "C:\Users\UserNameGoesHere\Saved Games\DCS.server"			 									#DCS Server Profile Path
+$VNC_Path			= "C:\Program Files\RealVNC\VNC Server\vncserver.exe"										#Path to VNC Server EXE
+$VNC_Port			= 16108																						#Listening Port for VNC Server
+
+$DCS_Profile 		= "C:\Users\c0rnerst0ne\Saved Games\DCS.openbeta_server" 									#DCS Server Profile Path
 $dcsDIR 			= "G:\GameServer\DCS World Server"			 												#DCS Install Location
-$srsDIR 			= "G:\GameServer\SRS"						 												#SRS Installation Location
+$srsDIR 			= "G:\GameServer\DCS-SimpleRadio-Standalone" 												#SRS Installation Location
 $LotDIR 			= "G:\GameServer\LotAtc" 																	#LotATC Installation Location
 $TacvDIR 			= "G:\GameServer\Tacview" 																	#Tacview Installation Location
 
@@ -147,6 +152,11 @@ if (test-path $PS_LogFile) {
 	write-host "OK" -nonewline -ForegroundColor green
 	write-host " - $PS_LogFile" -ForegroundColor yellow
 	} else {write-host "Not Found" -ForegroundColor red}
+write-host '$VNC_Path	== ' -nonewline -ForegroundColor white
+if (test-path $VNC_Path) {
+	write-host "OK" -nonewline -ForegroundColor green
+	write-host " - $VNC_Path" -ForegroundColor yellow
+	} else {write-host "Not Found" -ForegroundColor red}	
 ####################################################################################################
 write-host " "
 write-host "Checking all DCS Variables...." -ForegroundColor white
@@ -579,6 +589,8 @@ Manages all RDP Firewall rules for a specific IP address
 Mode 1: Unlock
 This mode will generate rules for the specific user who requested them.
 Change-Firewall-RDP -UnLock -IP 192.168.0.55 -USER 'OzDeaDMeaT' -DiscordID '548546875'
+Change-Firewall-RDP -UnLock -IP 192.168.0.55 -USER 'OzDeaDMeaT' -DiscordID '548546875' -VNC
+
 Mode 2: Lock
 This mode will check if there is an active connection for the specific user and if there is not it will remove the rules associated with the user it is checking for.
 Change-Firewall-RDP -Lock -IP 192.168.0.55 -USER 'OzDeaDMeaT' -DiscordID '548546875'
@@ -592,6 +604,7 @@ Param (
 [string]$IP = '',
 [string]$USER = '',
 [string]$DiscordID = '',
+[switch]$VNC,
 [switch]$Lock,
 [switch]$Unlock,
 [switch]$ClearAll
@@ -628,10 +641,18 @@ if($Unlock) {
 			get-NetFirewallRule -Name "$RULE_NAME_PREFIX *" | remove-NetFirewallRule
 			write-log -LogData "Old Firewall Rules Found, removing..." -Silent
 			Start-sleep 1
-			}		
-		$shhh = New-NetFirewallRule -Name "$RULE_NAME_PREFIX TCP" -DisplayName "$RULE_DISPLAYNAME_PREFIX TCP" -Description $RULE_DESCRIPTION -Direction Inbound -LocalPort $RDPPort -Protocol TCP -RemoteAddress $IP -Action Allow -Program %SystemRoot%\system32\svchost.exe -Group 'Remote Desktop'
-		$shhh = New-NetFirewallRule -Name "$RULE_NAME_PREFIX UDP" -DisplayName "$RULE_DISPLAYNAME_PREFIX UDP" -Description $RULE_DESCRIPTION -Direction Inbound -LocalPort $RDPPort -Protocol UDP -RemoteAddress $IP -Action Allow -Program %SystemRoot%\system32\svchost.exe -Group 'Remote Desktop'
-		$shhh = New-NetFirewallRule -Name "$RULE_NAME_PREFIX Shadow TCP" -DisplayName "$RULE_DISPLAYNAME_PREFIX Shadow TCP" -Description $RULE_DESCRIPTION -Direction Inbound -Protocol TCP -RemoteAddress $IP -Action Allow -Program %SystemRoot%\system32\RdpSa.exe -Group 'Remote Desktop'
+			}
+		#RDP Rules			
+		if ($VNC) {
+			$shhh = New-NetFirewallRule -Name "$RULE_NAME_PREFIX VNC-TCP" -DisplayName "$RULE_DISPLAYNAME_PREFIX TCP" -Description $RULE_DESCRIPTION -Direction Inbound -LocalPort $VNC_Port -Protocol TCP -RemoteAddress $IP -Action Allow -Program $VNC_Path -Group 'Remote Desktop'
+			$shhh = New-NetFirewallRule -Name "$RULE_NAME_PREFIX VNC-UDP" -DisplayName "$RULE_DISPLAYNAME_PREFIX UDP" -Description $RULE_DESCRIPTION -Direction Inbound -LocalPort $VNC_Port -Protocol UDP -RemoteAddress $IP -Action Allow -Program $VNC_Path -Group 'Remote Desktop'
+			}
+		else {	
+			$shhh = New-NetFirewallRule -Name "$RULE_NAME_PREFIX RDP-TCP" -DisplayName "$RULE_DISPLAYNAME_PREFIX TCP" -Description $RULE_DESCRIPTION -Direction Inbound -LocalPort $RDPPort -Protocol TCP -RemoteAddress $IP -Action Allow -Program %SystemRoot%\system32\svchost.exe -Group 'Remote Desktop'
+			$shhh = New-NetFirewallRule -Name "$RULE_NAME_PREFIX RDP-UDP" -DisplayName "$RULE_DISPLAYNAME_PREFIX UDP" -Description $RULE_DESCRIPTION -Direction Inbound -LocalPort $RDPPort -Protocol UDP -RemoteAddress $IP -Action Allow -Program %SystemRoot%\system32\svchost.exe -Group 'Remote Desktop'
+			$shhh = New-NetFirewallRule -Name "$RULE_NAME_PREFIX Shadow RDP-TCP" -DisplayName "$RULE_DISPLAYNAME_PREFIX Shadow TCP" -Description $RULE_DESCRIPTION -Direction Inbound -Protocol TCP -RemoteAddress $IP -Action Allow -Program %SystemRoot%\system32\RdpSa.exe -Group 'Remote Desktop'
+			}
+		
 		$OutputVar.Request = "Unlock"
 		$OutputVar.Message = "$USER Door is unlocked, come on in..."
 		write-log -LogData "Firewall rules generated for $USER with Discord ID of $DiscordID for IP:$IP" -Silent
@@ -642,8 +663,13 @@ if($Unlock) {
 		write-log -LogData "IP Address Supplied is invalid" -Silent
 		}
 	}
-
-$connected = (get-nettcpconnection | Where-Object{$_.RemoteAddress -eq $IP -and $_.LocalPort -eq $RDPPort -and $_.State -eq 'Established'} | Measure-Object).Count
+#Need VNC Bool Check and new info here
+if ($VNC) {
+	$connected = (get-nettcpconnection | Where-Object{$_.RemoteAddress -eq $IP -and $_.LocalPort -eq $VNC_Port -and $_.State -eq 'Established'} | Measure-Object).Count
+	}
+else {
+	$connected = (get-nettcpconnection | Where-Object{$_.RemoteAddress -eq $IP -and $_.LocalPort -eq $RDPPort -and $_.State -eq 'Established'} | Measure-Object).Count
+	}
 if($connected -ne 0) {
 	$OutputVar.Connected = $true
 	}
@@ -696,9 +722,6 @@ if($CheckIP) {
 	}
 write-log -LogData "New-Firewall-RDPPort Finished"
 }
-
-
-
 Function Reboot-Server {
 	write-log -LogData "--------------------------------------------------------" -Silent
 	write-log -LogData "REBOOT STARTED..." -Silent
@@ -1029,9 +1052,11 @@ if ($Restart) {Restart-DCS}
 if ($Stop) {Stop-DCS}
 if ($Update) {Update-Server}
 if ($Start) {Start-DCS}
-if ($Secure) {$DCSreturn = Change-Firewall-RDP -Lock -IP $IP -USER $USER -DiscordID $ID}
+if ($Secure -and (-not $VNC)) {$DCSreturn = Change-Firewall-RDP -Lock -IP $IP -USER $USER -DiscordID $ID}
+if ($Access -and (-not $VNC)) {$DCSreturn = Change-Firewall-RDP -Unlock -IP $IP -USER $USER -DiscordID $ID}
+if ($Secure -and $VNC) {$DCSreturn = Change-Firewall-RDP -Lock -IP $IP -USER $USER -DiscordID $ID -VNC}
+if ($Access -and $VNC) {$DCSreturn = Change-Firewall-RDP -Unlock -IP $IP -USER $USER -DiscordID $ID -VNC}
 if ($ClearAll) {$DCSreturn = Change-Firewall-RDP -ClearAll}
-if ($Access) {$DCSreturn = Change-Firewall-RDP -Unlock -IP $IP -USER $USER -DiscordID $ID}
 if ($Report) {$DCSreturn = Get-Report}
 if ($Start) {$DCSreturn = Get-Report}
 If ($Stop) {$DCSreturn = Get-Status}
