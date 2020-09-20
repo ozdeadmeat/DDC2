@@ -41,7 +41,7 @@ $PS_LogFile			= "G:\GameServer\DDC2\DDC2.log" 															#Log File Location 
 $VNC_Path			= "C:\Program Files\RealVNC\VNC Server\vncserver.exe"										#Path to VNC Server EXE
 $VNC_Port			= 16108																						#Listening Port for VNC Server
 
-$DCS_Profile 		= "C:\Users\c0rnerst0ne\Saved Games\DCS.openbeta_server" 									#DCS Server Profile Path
+$DCS_Profile 		= "C:\Users\YOUR_USERNAME_HERE\Saved Games\DCS.openbeta_server" 									#DCS Server Profile Path
 $dcsDIR 			= "G:\GameServer\DCS World Server"			 												#DCS Install Location
 $srsDIR 			= "G:\GameServer\DCS-SimpleRadio-Standalone" 												#SRS Installation Location
 $LotDIR 			= "G:\GameServer\LotAtc" 																	#LotATC Installation Location
