@@ -1,12 +1,13 @@
 <#
 DCS Controller Script for Node-Red & Discord Interaction
-# Version 1.172e
+# Version 1.172f
 # Writen by OzDeaDMeaT
-# 20-09-2020
+# 21-09-2020
 ####################################################################################################
 #CHANGE LOG#########################################################################################
 ####################################################################################################
 - Splitting out Report to multiple Functions
+- Fixed Bug where VNC was disconnecting after 1 minute. (Note, your VNC server must be set to use TCP for !access to work correctly)
 - Added VNC Server to !access capability (Change-Firewall-RDP)
 - Added New-Firewall-RDPPort Function to assist in installation when changing RDP Ports from Default
 - Added Check-DDC2-PS Function to check variables that are set in DDC2.ps1 File
@@ -41,7 +42,7 @@ $PS_LogFile			= "G:\GameServer\DDC2\DDC2.log" 															#Log File Location 
 $VNC_Path			= "C:\Program Files\RealVNC\VNC Server\vncserver.exe"										#Path to VNC Server EXE
 $VNC_Port			= 16108																						#Listening Port for VNC Server
 
-$DCS_Profile 		= "C:\Users\YOUR_USERNAME_HERE\Saved Games\DCS.openbeta_server" 									#DCS Server Profile Path
+$DCS_Profile 		= "C:\Users\YOUR_USER_ID\Saved Games\DCS.openbeta_server" 									#DCS Server Profile Path
 $dcsDIR 			= "G:\GameServer\DCS World Server"			 												#DCS Install Location
 $srsDIR 			= "G:\GameServer\DCS-SimpleRadio-Standalone" 												#SRS Installation Location
 $LotDIR 			= "G:\GameServer\LotAtc" 																	#LotATC Installation Location
@@ -665,10 +666,14 @@ if($Unlock) {
 	}
 #Need VNC Bool Check and new info here
 if ($VNC) {
+	write-log -LogData "VNC Selected" -Silent
 	$connected = (get-nettcpconnection | Where-Object{$_.RemoteAddress -eq $IP -and $_.LocalPort -eq $VNC_Port -and $_.State -eq 'Established'} | Measure-Object).Count
+	write-log -LogData "VNC Connections = $connected" -Silent
 	}
 else {
+	write-log -LogData "RDP Selected" -Silent
 	$connected = (get-nettcpconnection | Where-Object{$_.RemoteAddress -eq $IP -and $_.LocalPort -eq $RDPPort -and $_.State -eq 'Established'} | Measure-Object).Count
+	write-log -LogData "RDP Connections = $connected" -Silent
 	}
 if($connected -ne 0) {
 	$OutputVar.Connected = $true
