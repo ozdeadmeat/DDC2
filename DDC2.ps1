@@ -55,7 +55,7 @@ $DCS_Config 		= "$DCS_Profile\Config\serverSettings.lua"													#DCS Server
 $DCS_AutoE			= "$DCS_Profile\Config\autoexec.cfg"														#DCS Autoexec.cfg
 $dcsargs 			= "--server --norender" 																	#DCS Server Arguments
 $DCS_Updater 		= "$dcsBIN\dcs_updater.exe" 																#DCS Updater Executable
-$DCS_Updater_Args 	= if($BETA) {"update @openbeta"} else {"update @release"}									#DCS Updater Arguments
+$DCS_Updater_Args 	= if($BETA) {"update @openbeta --quiet"} else {"update @release --quiet"}									#DCS Updater Arguments
 
 $TacvEXE 			= "$TacvDIR\Tacview64.exe" 																	#Tacview Executable
 $TACv_Entry 		= "$DCS_Profile\Mods\Tech\Tacview\entry.lua"												#Tacview Entry Data
@@ -64,7 +64,7 @@ $TACv_Config 		= "$DCS_Profile\Config\options.lua"															#Tacview Config
 $Lot_Entry			= "$DCS_Profile\Mods\services\LotAtc\entry.lua"												#LotATC Entry Data
 $Lot_Config 		= "$DCS_Profile\Mods\services\LotAtc\config.lua"											#LotATC Config File
 $Lot_Updater 		= "$LotDIR\LotAtc_updater.exe"																#LotATC Updater Executable
-$Lot_Updater_Args 	= "--silentUpdate"																			#LotATC Updater Arguments
+$Lot_Updater_Args 	= "-c up"																			#LotATC Updater Arguments
 
 $srsEXE 			= "$srsDIR\SR-Server.exe" 																	#SRS Executable
 $SRS_Entry 			= "$DCS_Profile\Mods\services\DCS-SRS\entry.lua"											#SRS DCS Entry Data
