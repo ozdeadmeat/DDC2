@@ -38,3 +38,5 @@ __Zyfr__ for his wealth of knowledge regarding all things DCS and LUA.
 __MrPing__ for his knowledge in all things DCS Dedicated Server.
 
 __Rob__ from HypeMan for showing me DCS UDP Ports and Event Handlers.
+
+__Jeffrey Friedl__ for his work on JSON.lua.
