@@ -1,5 +1,33 @@
 # DDC2
-## Discord to DCS Command and Control ##
+## Discord to DCS Command and Control 2.0a Alpha Release##
+
+NOTE: THIS VERIONS HAS NOT BEEN FULLY TESTED IS CURRENTLY NOT FEATURE COMPLETE
+
+Features Missing or Untested
+
+- Update (Untested)
+- Multi-Instance (Untested)
+- Radio (Requires a yet unreleased version of SRS)
+
+New Instructions:
+
+Download and Install the new version of powershell
+
+From an Admin Powershell Console execute the command below.
+iex "& { $(irm https://aka.ms/install-powershell.ps1) } -UseMSI"
+
+In the Exec Node make sure you add the additionalparameter to point to the DDC2 Folder (Extra Input Parameters)
+
+-DDC2DIR "<YourDDC2InstanceLocation"
+
+All config is now located in ddc2_config.ps1 and that file MUST be co-located with the ddc2.ps1 file.
+Node-Red only requires the Exec Node to be updated and should work once correctly updated.
+
+DDC2 2.0+ will not work with the powershell that comes with windows by default, an error message will come up in the log if you attempt to run it with the old version of powershell.
+
+A video will come out closer to the full release and once i have worked out all the big bugs I am yet unaware of.
+
+---------------------------------------------------------------------------------
 
 Thanks for taking the time to try out DDC2. Here are some useful links to keep up to date with all that is happening with DDC2. 
 
