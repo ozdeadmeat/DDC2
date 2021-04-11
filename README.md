@@ -27,6 +27,8 @@ DDC2 2.0+ will not work with the powershell that comes with windows by default, 
 
 A video will come out closer to the full release and once i have worked out all the big bugs I am yet unaware of.
 
+Any issues please post them here for record keeping.
+
 ---------------------------------------------------------------------------------
 
 Thanks for taking the time to try out DDC2. Here are some useful links to keep up to date with all that is happening with DDC2. 
