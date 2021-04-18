@@ -1,13 +1,11 @@
 # DDC2
-## Discord to DCS Command and Control 2.0a Alpha Release##
+## Discord to DCS Command and Control 2.0b Alpha Release##
 
-NOTE: THIS VERIONS HAS NOT BEEN FULLY TESTED IS CURRENTLY NOT FEATURE COMPLETE
+NOTE: This version is now feature complete. 
 
-Features Missing or Untested
+Features Untested:
 
-- Update (Untested)
 - Multi-Instance (Untested)
-- Radio (Requires a yet unreleased version of SRS)
 
 New Instructions:
 
