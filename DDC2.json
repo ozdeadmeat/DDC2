@@ -2,7 +2,7 @@
     {
         "id": "706974d2.aeef8c",
         "type": "tab",
-        "label": "DDC2 v2.0a",
+        "label": "DDC2 v2.0b",
         "disabled": false,
         "info": ""
     },
@@ -19,7 +19,7 @@
         "property": "payload",
         "action": "obj",
         "pretty": true,
-        "x": 661,
+        "x": 475,
         "y": 240,
         "wires": [
             [
@@ -45,8 +45,8 @@
         "topic": "",
         "payload": "true",
         "payloadType": "bool",
-        "x": 180,
-        "y": 640,
+        "x": 140,
+        "y": 600,
         "wires": [
             [
                 "e02a6d7f.cea5e",
@@ -64,8 +64,8 @@
         "noerr": 0,
         "initialize": "",
         "finalize": "\n",
-        "x": 406,
-        "y": 580,
+        "x": 340,
+        "y": 540,
         "wires": [
             [
                 "93ff8e76.3b59c"
@@ -97,7 +97,7 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 721,
+        "x": 519,
         "y": 240,
         "wires": [
             [
@@ -112,13 +112,13 @@
         "type": "function",
         "z": "706974d2.aeef8c",
         "name": "AutoStart",
-        "func": "var payload = \"-report\"; //Changed while testing (Switch between -report or -update)\nmsg.payload = payload;\nvar DDC2 = flow.get('DDC2');\nmsg.author = {\n        \"username\": DDC2.ServerInfo.ServerID,\n        \"id\": DDC2.ServerInfo.ServerID\n    }\n\nmsg.data = {\n    \"createdTimestamp\": Date.now()\n    }\nmsg.channel = {\n    \"id\": DDC2.Channel.Admin\n    }\n\nvar tmstmp = msg.data.createdTimestamp;\nvar localdatetime = (new Date(tmstmp)).toLocaleString();\nvar command = \"!autostart\";\nvar requesttype = command.replace('!','')\nvar access = \"GRANTED\";\n\nmsg.message = {\n          \"request\" : command,\n    \"FormattedTime\" : localdatetime,\n   \"RequestChannel\" : \"NOT APPLICABLE\",\n \"RequestChannelID\" : \"NOT APPLICABLE\",\n      \"requesttype\" : requesttype,\n           \"access\" : access,\n       \"authorized\" : true,\n            \"valid\" : true,\n          \"comment\" : \"Server AutoStart\",\n     \"Notification\" : DDC2.ServerInfo.ServerID+ ` has initialized its ` +requesttype+ ` sequence on the ` +localdatetime,\n              \"raw\" : msg.payload\n}\n\nreturn msg\n\n",
+        "func": "var payload = \"-doupdate\"; //Changed while testing (Switch between -status or -doupdate)\nmsg.payload = payload;\nvar DDC2 = flow.get('DDC2');\nmsg.author = {\n        \"username\": DDC2.ServerInfo.ServerID,\n        \"id\": DDC2.ServerInfo.ServerID\n    }\n\nmsg.data = {\n    \"createdTimestamp\": Date.now()\n    }\nmsg.channel = {\n    \"id\": DDC2.Channel.Admin\n    }\n\nvar tmstmp = msg.data.createdTimestamp;\nvar localdatetime = (new Date(tmstmp)).toLocaleString();\nvar command = \"!autostart\";\nvar requesttype = command.replace('!','')\nvar access = \"GRANTED\";\n\nmsg.message = {\n          \"request\" : command,\n    \"FormattedTime\" : localdatetime,\n   \"RequestChannel\" : \"NOT APPLICABLE\",\n \"RequestChannelID\" : \"NOT APPLICABLE\",\n      \"requesttype\" : requesttype,\n           \"access\" : access,\n       \"authorized\" : true,\n            \"valid\" : true,\n          \"comment\" : \"Server AutoStart\",\n     \"Notification\" : DDC2.ServerInfo.ServerID+ ` has initialized its ` +requesttype+ ` sequence on the ` +localdatetime,\n              \"raw\" : msg.payload\n}\n\nreturn msg\n\n",
         "outputs": 1,
         "noerr": 0,
         "initialize": "",
         "finalize": "\n",
-        "x": 546,
-        "y": 640,
+        "x": 440,
+        "y": 600,
         "wires": [
             [
                 "93ff8e76.3b59c",
@@ -129,8 +129,7 @@
             "Post-Whitelist-Check"
         ],
         "outputLabels": [
-            "Process Request",
-            "Task Notification"
+            "Process Request"
         ],
         "icon": "node-red/arrow-in.svg"
     },
@@ -139,19 +138,18 @@
         "type": "function",
         "z": "706974d2.aeef8c",
         "name": "Config Refreshed",
-        "func": "//DO NOT MODIFY THIS DATA!!\n//This sets the entire DDC2 variable structure from the ddc2_config.ps1, dont remove it!\nflow.set('DDC2', 0);\nflow.set('DDC2', msg.PS);\nflow.set('DDC2.ServerInfo.DDC2_FLOW', \"v2.0a\")\n\nvar TimeDate = new Date(msg.data.createdTimestamp).toLocaleString();\nnode.status({fill:\"green\",shape:\"dot\",text:TimeDate});\n\nreturn msg;",
+        "func": "//DO NOT MODIFY THIS DATA!!\n//This sets the entire DDC2 variable structure from the ddc2_config.ps1, dont remove it!\nflow.set('DDC2', 0);\nflow.set('DDC2', msg.PS);\nflow.set('DDC2.ServerInfo.DDC2_FLOW', \"v2.0b\")\n\nvar TimeDate = new Date(msg.data.createdTimestamp).toLocaleString();\nnode.status({fill:\"green\",shape:\"dot\",text:TimeDate});\n\nreturn msg;",
         "outputs": 1,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
-        "x": 210,
+        "x": 190,
         "y": 100,
         "wires": [
             [
                 "57b9e2a7.0d693c",
                 "9230d674.d7e168",
-                "32c94689.2876aa",
-                "73a35b78.ac4d74"
+                "32c94689.2876aa"
             ]
         ],
         "icon": "node-red/cog.svg"
@@ -165,7 +163,7 @@
             "eeb0adf7.7cbaa",
             "a88d9103.dab59"
         ],
-        "x": 75,
+        "x": 55,
         "y": 100,
         "wires": [
             [
@@ -195,7 +193,7 @@
         "noerr": 0,
         "initialize": "",
         "finalize": "",
-        "x": 420,
+        "x": 400,
         "y": 40,
         "wires": [],
         "icon": "font-awesome/fa-id-card-o"
@@ -205,14 +203,21 @@
         "type": "function",
         "z": "706974d2.aeef8c",
         "name": "Server Status",
-        "func": "flow.set('DDC2.Ready', true);\nnode.status({fill:\"green\",shape:\"dot\",text:\"SERVER READY!\"});",
-        "outputs": 0,
+        "func": "flow.set('DDC2.Ready', true);\nnode.status({fill:\"green\",shape:\"dot\",text:\"SERVER READY!\"});\n\n//This line checks if the refresh command has been called, if so it does not execute the Autostart sequence.\nif(msg.message.request == \"!refresh\") {} else {return msg}",
+        "outputs": 1,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
-        "x": 420,
+        "x": 400,
         "y": 160,
-        "wires": [],
+        "wires": [
+            [
+                "73a35b78.ac4d74"
+            ]
+        ],
+        "outputLabels": [
+            "To AutoStart"
+        ],
         "icon": "node-red/status.svg"
     },
     {
@@ -221,8 +226,8 @@
         "z": "706974d2.aeef8c",
         "name": "Get Message",
         "token": "7c57f327.ae4bec",
-        "x": 110,
-        "y": 1000,
+        "x": 90,
+        "y": 860,
         "wires": [
             [
                 "63c3e868.8c0298",
@@ -232,44 +237,16 @@
         ]
     },
     {
-        "id": "ac6484be.68b7b8",
-        "type": "function",
-        "z": "706974d2.aeef8c",
-        "name": "CNC-CORE-LOGIC",
-        "func": "/*\nThis Node unpacks the msg and does a check that this server is the intended recipient of the message\n*/\n//Moving Message Payload\n\n////////////////////////////////////////////////////////////////////////////////////////////////////\n////Initialize Variables\n//Get Flow Variables\nvar DDC2 = flow.get('DDC2');\nvar perms = DDC2.Permissions;\n//Get Message Variables\nvar usrname = msg.author.username;\nvar discordID = msg.author.id;\nvar message = msg.payload;\nvar DiscordRoles = msg.member._roles;\nvar tmstmp = msg.data.createdTimestamp;\nvar localdatetime = (new Date(tmstmp)).toLocaleString();\n//Messge Breakdown\n    var msglow = message.toLowerCase();\n    var splitmsg = msglow.split(\" \",3);\n    var command = splitmsg[0];\n    var server = splitmsg[1];\n    \n    //Setting new Variables\n    msg.message = {\n        \"request\" : command,\n          \"valid\" : false,\n            \"raw\" : msg.payload\n    }\n    \n    var payloaderror = \"Invalid Request recieved: \" +command;\n    var payload = \"\";\n    \n    ////////////////////////////////////////////////////////////////////////////////////////////////////\n    ////Functions\n    /**\n     * @description determine if an array contains one or more items from another array.\n     * @param {array} haystack the array to search.\n     * @param {array} arr the array providing items to check for in the haystack.\n     * @return {boolean} true|false if haystack contains at least one item from arr.\n     */\n    var GrantAccess = function (haystack, arr) {\n        return arr.some(function (v) {\n            return haystack.indexOf(v) >= 0;\n        });\n    };\n    ////////////////////////////////////////////////////////////////////////////////////////////////////\n    \n    \n    if (command == \"!test\") { //All Servers should respond to a test command\n        if (GrantAccess(perms.test,DiscordRoles)) {\n            msg.payload = usrname+\" test message was successfully recieved by server \"+DDC2.ServerID;\n            msg.message.authorized = true;\n            msg.message.valid = true;\n            }\n        else {\n            msg.payload = usrname+\", Access Denied for !test command on server \"+DDC2.ServerID;\n            msg.message.authorized = false;\n            msg.message.valid = true;\n            }\n        if(msg.message.authorized) {return [null,msg,msg]} else {return [null,msg,msg]}\n        }\n    \n    if (server == DDC2.ServerID.toLowerCase()) { //Server ID Check (is this the server the message is looking for?)\n        if (message.charAt(0) == '!') { //This message is a command request\n            payload = payloaderror;\n            msg.message.valid = false;\n            msg.message.request = command;\n            msg.message.server = server;\n           /////////////////////////////////////////////////\n            if (command == \"!info\") {\n                if (GrantAccess(perms.info,DiscordRoles)) {\n                    payload = \"-info\"; //PLACE HOLDER UNTIL INFO TASK BUILT\n                    msg.payload = payload;\n                    msg.message.authorized = true;\n                    msg.message.valid = true;    \n                    return [null,msg,msg,msg];\n                    }\n                else {\n                    msg.message.User = usrname;\n                    msg.message.valid = true;\n                    msg.message.DiscordID = discordID;\n                    return [null,msg,msg,msg];\n                    }\n                }\n            /////////////////////////////////////////////////\n            if (command == \"!status\") {\n                if (GrantAccess(perms.statusV,DiscordRoles)) {\n                    payload = \"-status\";      \n                    msg.payload = payload;\n                    msg.message.authorized = true;\n                    msg.message.valid = true;    \n                    return [msg,msg,msg,null];\n                    }\n                else {\n                    msg.message.valid = true;\n                    return [null,msg,msg,null];\n                    }\n                }\n            /////////////////////////////////////////////////\n            if (command == \"!report\") {\n                if (GrantAccess(perms.report,DiscordRoles)) {\n                    payload = \"-report\";      \n                    msg.payload = payload;\n                    msg.message.authorized = true;\n                    msg.message.valid = true;    \n                    return [msg,msg,msg,null];\n                    }\n                else {\n                    msg.message.User = usrname;\n                    msg.message.valid = true;\n                    msg.message.DiscordID = discordID;\n                    return [null,msg,msg,null];\n                    }\n                }\n            /////////////////////////////////////////////////\n            if (command == \"!start\") {\n                if (GrantAccess(perms.start,DiscordRoles)) {\n                    payload = \"-start\";      \n                    msg.payload = payload;\n                    msg.message.authorized = true;\n                    msg.message.valid = true;    \n                    return [msg,msg,msg,null];\n                    }\n                else {\n                    msg.message.User = usrname;\n                    msg.message.valid = true;\n                    msg.message.DiscordID = discordID;\n                    return [null,msg,msg,null];\n                    }\n                }\n            /////////////////////////////////////////////////\n            if (command == \"!stop\") {\n                if (GrantAccess(perms.stop,DiscordRoles)) {\n                    payload = \"-stop\";      \n                    msg.payload = payload;\n                    msg.message.authorized = true;\n                    msg.message.valid = true;    \n                    return [msg,msg,msg,null];\n                    }\n                else {\n                    msg.message.User = usrname;\n                    msg.message.valid = true;\n                    msg.message.DiscordID = discordID;\n                    return [null,msg,msg,null];\n                    }\n                }\n            /////////////////////////////////////////////////\n            if (command == \"!restart\") {\n                if (GrantAccess(perms.restart,DiscordRoles)) {\n                    payload = \"-restart\";      \n                    msg.payload = payload;\n                    msg.message.authorized = true;\n                    msg.message.valid = true;    \n                    return [msg,msg,msg,null];\n                    }\n                else {\n                    msg.message.User = usrname;\n                    msg.message.valid = true;\n                    msg.message.DiscordID = discordID;\n                    return [null,msg,msg,null];\n                    }\n                }\n            /////////////////////////////////////////////////\n            if (command == \"!update\") {\n                if (GrantAccess(perms.update,DiscordRoles)) {\n                    payload = \"-update\";      \n                    msg.payload = payload;\n                    msg.message.authorized = true;\n                    msg.message.valid = true;    \n                    return [msg,msg,msg,null];\n                    }\n                else {\n                    msg.message.User = usrname;\n                    msg.message.valid = true;\n                    msg.message.DiscordID = discordID;\n                    return [null,msg,msg,null];\n                    }\n                }\n            /////////////////////////////////////////////////\n            if (command == \"!reboot\") {\n                if (GrantAccess(perms.reboot,DiscordRoles)) {\n                    payload = \"-reboot\";      \n                    msg.payload = payload;\n                    msg.message.authorized = true;\n                    msg.message.valid = true;    \n                    return [msg,msg,msg,null];\n                    }\n                else {\n                    msg.message.User = usrname;\n                    msg.message.valid = true;\n                    msg.message.DiscordID = discordID;\n                    return [null,msg,msg,null];\n                    }\n                }\n/////////////////////////////////////////////////\nif (command == \"!access\") {\n    if (GrantAccess(perms.access,DiscordRoles)) {\n        if (DDC2.VNC.Enabled) {\n            payload = `-access -IP `+splitmsg[2]+` -USER `+usrname+` -ID `+discordID+ ` -VNC`;\n            }\n        else {\n            payload = `-access -IP `+splitmsg[2]+` -USER `+usrname+` -ID `+discordID;\n            }\n        msg.payload = payload;\n        msg.message.authorized = true;\n        msg.message.valid = true;\n        msg.message.IP = splitmsg[2];\n        if (typeof msg.message.IP === 'undefined') {\n            msg.message.User = usrname;\n            msg.message.valid = false;\n            msg.message.DiscordID = discordID;\n            msg.message.commentLog = `!access request was missing IP address`\n            msg.message.comment = ` \\`\\`\\``+DDC2.ServerID+ ` received an invalid request (`+msg.message.request+`) request. (Missing IP Address)\n\nNOTE: Please use the following syntax: !access `+DDC2.ServerID+` <IPv4Address>\n            \nRequest recieved from ` +usrname+ ` at `+localdatetime+`\\`\\`\\` **Note: Access Information will only appear in the admin channel**`\n            return [null,msg,msg,null];    \n            }\n        else {\n            msg.message.User = usrname;\n            msg.message.valid = true;\n            msg.message.DiscordID = discordID;\n            return [msg,msg,msg,null];    \n            }\n        }\n    else {\n        msg.message.User = usrname;\n        msg.message.valid = true;\n        msg.message.DiscordID = discordID;\n        return [null,msg,msg,null];\n        }\n    }\n/////////////////////////////////////////////////\n}\n}",
-        "outputs": 4,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "x": 660,
-        "y": 1540,
-        "wires": [
-            [],
-            [],
-            [],
-            []
-        ],
-        "inputLabels": [
-            "Post-Whitelist-Check"
-        ],
-        "outputLabels": [
-            "Process Request",
-            "Start Message",
-            "Log",
-            "!info"
-        ]
-    },
-    {
         "id": "6a1332a6.6517ac",
         "type": "function",
         "z": "706974d2.aeef8c",
-        "name": "Server Check",
-        "func": "var DDC2 = flow.get('DDC2');\n//var perms = DDC2.Permissions;\n//Get Message Variables\n//var usrname = msg.author.username;\n//var discordID = msg.author.id;\nvar message = msg.payload;\n//var DiscordRoles = msg.member._roles;\nvar tmstmp = msg.data.createdTimestamp;\nvar localdatetime = (new Date(tmstmp)).toLocaleString();\n//Breakdown of Message\nvar msglow = message.toLowerCase();\nvar splitmsg = msglow.split(\" \",3);\nvar command = splitmsg[0];\nvar server = splitmsg[1];\nvar requesttype = command.replace('!','')\nvar access = \"NOTSET\";\n\nmsg.message = {\n          \"request\" : command,\n    \"FormattedTime\" : localdatetime,\n   \"RequestChannel\" : msg.data.channel.name,\n \"RequestChannelID\" : msg.data.channel.id,\n      \"requesttype\" : requesttype,\n           \"access\" : access,\n       \"authorized\" : false,\n            \"valid\" : false,\n          \"comment\" : \"\",\n     \"Notification\" : \"\",\n              \"TTC\" : \"\", //Time To Completion, This measures the time the system recieved the request through to the time the request was completed. This item is used in further down in the flow\n              \"raw\" : msg.payload\n}\n\nif(server == DDC2.ServerInfo.ServerID.toLowerCase()) {return msg} //use this line if you have multiple servers operating from a single channel\n//return msg //use this line if you have one server and you do not wish to have to define the server name to interact with you server.\n\n",
+        "name": "Svr Check",
+        "func": "var DDC2 = flow.get('DDC2');\n//var perms = DDC2.Permissions;\n//Get Message Variables\n//var usrname = msg.author.username;\n//var discordID = msg.author.id;\n//var message = msg.payload;\n//var DiscordRoles = msg.member._roles;\nvar tmstmp = msg.data.createdTimestamp;\nvar localdatetime = (new Date(tmstmp)).toLocaleString();\n//Breakdown of Message\nvar msglow = msg.payload.toLowerCase();\nvar splitmsg = msglow.split(\" \",3);\nvar command = splitmsg[0];\nvar server = splitmsg[1];\nvar requesttype = command.replace('!','')\nvar access = \"NOTSET\";\n\nmsg.message = {\n          \"request\" : command,\n    \"FormattedTime\" : localdatetime,\n   \"RequestChannel\" : msg.data.channel.name,\n \"RequestChannelID\" : msg.data.channel.id,\n      \"requesttype\" : requesttype,\n           \"access\" : access,\n       \"authorized\" : false,\n            \"valid\" : false,\n          \"comment\" : \"\",\n     \"Notification\" : \"\",\n              \"TTC\" : \"\", //Time To Completion, This measures the time the system recieved the request through to the time the request was completed. This item is used in further down in the flow\n              \"raw\" : msg.payload\n}\n\nif(server == DDC2.ServerInfo.ServerID.toLowerCase()) {return msg} //use this line if you have multiple servers operating from a single channel\n//return msg //use this line if you have one server and you do not wish to have to define the server name to interact with you server.\n\n",
         "outputs": 1,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
-        "x": 246,
+        "x": 250,
         "y": 860,
         "wires": [
             [
@@ -288,8 +265,8 @@
         "noerr": 0,
         "initialize": "",
         "finalize": "",
-        "x": 356,
-        "y": 1000,
+        "x": 330,
+        "y": 740,
         "wires": [
             [
                 "f7686d61.dda76"
@@ -310,8 +287,8 @@
         "name": "Response Channel",
         "channel": "",
         "token": "7c57f327.ae4bec",
-        "x": 596,
-        "y": 400,
+        "x": 730,
+        "y": 420,
         "wires": []
     },
     {
@@ -396,7 +373,7 @@
         "checkall": "false",
         "repair": false,
         "outputs": 14,
-        "x": 361,
+        "x": 355,
         "y": 860,
         "wires": [
             [
@@ -494,58 +471,6 @@
         "icon": "font-awesome/fa-shield"
     },
     {
-        "id": "aecf7630.b48128",
-        "type": "function",
-        "z": "706974d2.aeef8c",
-        "name": "!access MSG",
-        "func": "var MsgSent = context.get('MsgSent') || 1;\nvar DDC2 = flow.get('DDC2');\nvar usrname = msg.author.username;\nvar responsee = \"<@\"+msg.author.id+\">\";\nvar tmstmp = msg.data.createdTimestamp;\nvar localdatetime = (new Date(tmstmp)).toLocaleString();\nvar msgLOG = msg;\nvar StatusMSG = {\"payload\" : ``};\n\n//FUNCTIONS////////////////////////////////////////////////////////////////////////////\nfunction pad(num, size) {\n    var s = num+\"\";\n    while (s.length < size) s = \"0\" + s;\n    return s;\n}\nDate.daysBetween = function( date1, date2 ) {\n  var one_day=1000*60*60*24;\n  var date1_ms = date1.getTime();\n  var date2_ms = date2.getTime();\n  var difference_ms = date2_ms - date1_ms;\n  difference_ms = Math.round(difference_ms/1000,3);\n  var mseconds = difference_ms % 1000;\n  var seconds = Math.floor(difference_ms % 60);\n  difference_ms = difference_ms/60; \n  var minutes = Math.floor(difference_ms % 60);\n  difference_ms = difference_ms/60; \n  var hours = Math.floor(difference_ms % 24);  \n  var days = Math.floor(difference_ms/24);\n  return pad(minutes,2) + ':' + pad(seconds,2) + '.' + pad(mseconds,3);\n}\n//END//FUNCTIONS///////////////////////////////////////////////////////////////////////\nif((msg.message.request == \"!access\") || (msg.message.request == \"!secure\")) {\n    var ttc = Date.daysBetween((new Date(tmstmp)), new Date());\n    if(msg.message.request == \"!access\") { //Finalizing Initial Run through: Message 1\n        flow.set('DDC2.Connected', false)\n        if(msg.PS.ValidIP === true) { //Access Granted\n            msg.message.request = \"!secure\";\n            if (DDC2.VNC.Enabled) {\n                msg.message.payload = `-secure -IP `+msg.message.IP+` -USER `+msg.message.User+` -ID `+msg.message.DiscordID+' -VNC'; //Shows the next message to be sent to the script\n                }\n            else {\n                msg.message.payload = `-secure -IP `+msg.message.IP+` -USER `+msg.message.User+` -ID `+msg.message.DiscordID; //Shows the next message to be sent to the script\n                }\n            msg.payload = msg.message.payload; //Loop MSG\n            msg.message.commentLog = 'Firewall rule created for '+msg.message.User+`(DiscordID: `+msg.message.DiscordID+`)`\n///////////////////////////////////////////////////////////////////////////////////////\n            RDPpayload = ` \\`\\`\\``+DDC2.ServerID+ ` has granted access to `+msg.message.User+`, door's open, come on in...\n\nRDP Connection information: `+DDC2.Info.PS.Details.Info.IPAddr+`:`+DDC2.Info.PS.Details.Info.RDPport+`\n        \nRequest completed in `+ttc+`\\`\\`\\` `\n\nVNCpayload = ` \\`\\`\\``+DDC2.ServerID+ ` has granted access to `+msg.message.User+`, door's open, come on in...\n\n`+DDC2.VNC.Type+` Connection information: `+DDC2.Info.PS.Details.Info.IPAddr+`:`+DDC2.VNC.Port+`\n        \nRequest completed in `+ttc+`\\`\\`\\` `\n///////////////////////////////////////////////////////////////////////////////////////\n            if (DDC2.VNC.Enabled) {StatusMSG.payload = VNCpayload} else {StatusMSG.payload = RDPpayload} //Status MSG\n            node.status({fill:\"green\",shape:\"ring\",text: \"Status Sent: \"+MsgSent});\n            context.set('MsgSent', (MsgSent + 1));\n            return [StatusMSG,msg,msg];\n            }\n        else { //Access Denied (Invalid IP) End Loop\n            msg.message.commentLog = `Invalid IPv4 Address (`+msg.PS.IP+`) supplied, no Firewall rule was created for `+msg.message.User\n///////////////////////////////////////////////////////////////////////////////////////\n            payload = ` \\`\\`\\``+DDC2.ServerID+ ` received an invalid request (`+msg.message.request+`) request. (IP `+msg.PS.IP+` is not a valid IPv4 Address)\n\nNOTE: Please use the following syntax: !access `+DDC2.ServerID+` <IPv4Address>\n\nRequest completed in `+ttc+`\\`\\`\\` `\n///////////////////////////////////////////////////////////////////////////////////////\n            StatusMSG.payload = payload; //Status MSG\n            node.status({fill:\"green\",shape:\"ring\",text: \"Status Sent: \"+MsgSent});\n            context.set('MsgSent', (MsgSent + 1));\n            return [StatusMSG,msg,null]; //Don't send back to loop\n            }\n        }\n    if(msg.message.request == \"!secure\") { //Message 2 / 3\n        if(msg.PS.Connected === true) {\n            flow.set('DDC2.Connected', true)\n            msg.message.request = \"!secure\";\n            if (DDC2.VNC.Enabled) {\n                msg.message.payload = `-secure -IP `+msg.message.IP+` -USER `+msg.message.User+` -ID `+msg.message.DiscordID+' -VNC'; //Shows the next message to be sent to the script\n                }\n            else {\n                msg.message.payload = `-secure -IP `+msg.message.IP+` -USER `+msg.message.User+` -ID `+msg.message.DiscordID; //Shows the next message to be sent to the script\n                }            \n            msg.payload = msg.message.payload; //Loop MSG\n            msg.message.commentLog = msg.message.User+` has connected to `+DDC2.ServerID\n///////////////////////////////////////////////////////////////////////////////////////\n            payload = ` \\`\\`\\``+msg.message.User+ ` has successfully connected to `+DDC2.ServerID+`\\`\\`\\` `\n///////////////////////////////////////////////////////////////////////////////////////\n            StatusMSG.payload = payload; //Status MSG\n            node.status({fill:\"green\",shape:\"ring\",text: \"Status Sent: \"+MsgSent});\n            context.set('MsgSent', (MsgSent + 1));\n            return [StatusMSG,msg,msg];\n            }\n        if(msg.PS.Connected === false) {\n            if(DDC2.Connected === true) { //User was connected but now is not\n                flow.set('DDC2.Connected', false)\n///////////////////////////////////////////////////////////////////////////////////////\n                payload = ` \\`\\`\\``+msg.message.User+ `, it was good to see you. Thanks for stopping by for approximately `+ttc+`. \n`+DDC2.ServerID+` has locked the door....\\`\\`\\` `\n///////////////////////////////////////////////////////////////////////////////////////\n                StatusMSG.payload = payload; //Status MSG\n                msg.message.commentLog = msg.message.User+` has disconnected from `+DDC2.ServerID+`, they were connected for approximately `+ttc\n                node.status({fill:\"green\",shape:\"ring\",text: \"Status Sent: \"+MsgSent});\n                context.set('MsgSent', (MsgSent + 1));\n                return [StatusMSG,msg,null];\n                }\n            else { //User never connected\n                flow.set('DDC2.Connected', false)\n///////////////////////////////////////////////////////////////////////////////////////\n                payload = ` \\`\\`\\``+msg.message.User+ ` obviously had something better to do, no connection was established. \n`+DDC2.ServerID+` has locked the door....\\`\\`\\` `\n///////////////////////////////////////////////////////////////////////////////////////\n                StatusMSG.payload = payload; //Status MSG\n                msg.message.commentLog = msg.message.User+` never connected to `+DDC2.ServerID\n                node.status({fill:\"green\",shape:\"ring\",text: \"Status Sent: \"+MsgSent});\n                context.set('MsgSent', (MsgSent + 1));\n                return [StatusMSG,msg,null];\n                }\n            }\n        }\n    }",
-        "outputs": 3,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "x": 210,
-        "y": 1540,
-        "wires": [
-            [],
-            [],
-            []
-        ],
-        "inputLabels": [
-            "Powershell Output"
-        ],
-        "outputLabels": [
-            "Server-Status",
-            "Server-Log",
-            "Loop"
-        ],
-        "icon": "node-red/envelope.svg"
-    },
-    {
-        "id": "29d8f0a8.c58ab",
-        "type": "function",
-        "z": "706974d2.aeef8c",
-        "name": "!report Admin MSG",
-        "func": "var MsgSent = context.get('MsgSent') || 1;\nvar DDC2 = flow.get('DDC2');\nvar usrname = msg.author.username; \nvar responsee = (msg.author.id === DDC2.ServerID) ? msg.author.id : \"<@\"+msg.author.id+\">\" \n//var responsee = if (msg.author.id != DCSCNC.ServerID) {\"<@\"+msg.author.id+\">\"} else {msg.author.id};\n//var responsee = \"<@\"+msg.author.id+\">\"; \nvar request = msg.message.request; \n\nvar tmstmp = msg.data.createdTimestamp;\nvar localdatetime = (new Date(tmstmp)).toLocaleString();\n\n//FUNCTIONS////////////////////////////////////////////////////////////////////////////\nfunction pad(num, size) {\n    var s = num+\"\";\n    while (s.length < size) s = \"0\" + s;\n    return s;\n}\nDate.daysBetween = function( date1, date2 ) {\n  var one_day=1000*60*60*24;\n  var date1_ms = date1.getTime();\n  var date2_ms = date2.getTime();\n  var difference_ms = date2_ms - date1_ms;\n  difference_ms = Math.round(difference_ms/1000,3);\n  var mseconds = difference_ms % 1000;\n  var seconds = Math.floor(difference_ms % 60);\n  difference_ms = difference_ms/60; \n  var minutes = Math.floor(difference_ms % 60);\n  difference_ms = difference_ms/60; \n  var hours = Math.floor(difference_ms % 24);  \n  var days = Math.floor(difference_ms/24);\n  return pad(minutes,2) + ':' + pad(seconds,2) + '.' + pad(mseconds,3);\n}\nfunction GetPriority(priority) {\nvar PriorityTable = { 64:\"Low\", \n                   16384:\"Below Normal\", \n                      32:\"Normal\", \n                   32768:\"Above Normal\", \n                     128:\"High\",\n\t\t\t\t\t 256:\"Realtime\"\n\t\t\t\t\t};\nreturn (PriorityTable[priority])\n}\n//END//FUNCTIONS///////////////////////////////////////////////////////////////////////\nif((request == \"!report\") || (request == \"!start\") || (request == \"!restart\") || (request == \"!update\") || (request == \"!autostart\")) {\nflow.set('DDC2.Info.PS',msg.PS);\nflow.set('DDC2.Info.Bool',true);\nflow.set('DDC2.Info.TimeStamp',tmstmp);\nvar ttc = Date.daysBetween((new Date(tmstmp)), new Date());\n//SERVER DETAILS\nvar serverMSG = `\n           #### SERVER   INFO ####\n             DDC2 Name : `+DDC2.ServerID+`\n       Windows Version : `+msg.PS.Details.Info.WinVer+`\n              CPU Type : `+msg.PS.Details.Info.CPUType+`\n             Total RAM : `+msg.PS.Details.Info.TotalMem+`GB\n         Server UpTime : `+pad(msg.PS.Details.Info.UpTime.Days,2)+ `:`+pad(msg.PS.Details.Info.UpTime.Hours,2)+`:`+pad(msg.PS.Details.Info.UpTime.Minutes,2)+`:`+pad(msg.PS.Details.Info.UpTime.Seconds,2)+`\n       Server DownTime : `+DDC2.ServerDT+`\n             Server IP : `+msg.PS.Details.Info.IPAddr+`\n      Server ISP Speed : `+DDC2.HostedBy.ISP.Speed+`\n            Server ISP : `+DDC2.HostedBy.ISP.Name+`\n   Remote Desktop Port : `+msg.PS.Details.Info.RDPport+`\n      Server Hosted By : `+DDC2.HostedBy.Name+`\n           Memory Load : `+msg.PS.Details.Info.MEMLoad+` %\n              CPU Load : `+msg.PS.Details.Info.CPULoad+` %`\n////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////\n//UPDATERS//////////////////////////////////////////////////////////////////////////////////////////////////////////////\n////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////\n//DCS Updater\nvar dcsUpdateok = \"INACTIVE\";\nvar dcsUpdate = \"\";\n    if(msg.PS.Status.Update.DCS_updater.IsActive) {\n\t\tif(msg.PS.Status.Update.DCS_updater.Responding) {dcsUpdateok = `RUNNING`} else {dcsUpdateok = `NOT RESPONDING`}\n    dcsUpdate = `\n           #### UPDATE   INFO ####\n\n     DCS Update Status : `+dcsUpdateok+`\n      DCS Update Ticks : `+msg.PS.Status.Update.DCS_updater.Ticks+`\n       DCS Update Time : `+pad(msg.PS.Status.Update.DCS_updater.RunTime.Days,2)+ `:`+pad(msg.PS.Status.Update.DCS_updater.RunTime.Hours,2)+`:`+pad(msg.PS.Status.Update.DCS_updater.RunTime.Minutes,2)+`:`+pad(msg.PS.Status.Update.DCS_updater.RunTime.Seconds,2)\n        }\n    else {\n      dcsUpdate = `\n           #### UPDATE   INFO ####\n           \n     DCS Update Status : `+dcsUpdateok\n        }\n////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////\n//SRS Updater\nvar srsUpdateok = \"INACTIVE\";\nvar srsUpdate = \"\";\n    if(msg.PS.Status.Update.SRS_Updater.IsActive) {\n\t\tif(msg.PS.Status.Update.SRS_updater.Responding) {srsUpdateok = `RUNNING`} else {srsUpdateok = `NOT RESPONDING`}\n    srsUpdate = `\n     SRS Update Status : `+srsUpdateok+`\n      SRS Update Ticks : `+msg.PS.Status.Update.SRS_updater.Ticks+`\n       SRS Update Time : `+pad(msg.PS.Status.Update.SRS_updater.RunTime.Days,2)+ `:`+pad(msg.PS.Status.Update.SRS_updater.RunTime.Hours,2)+`:`+pad(msg.PS.Status.Update.SRS_updater.RunTime.Minutes,2)+`:`+pad(msg.PS.Status.Update.SRS_updater.RunTime.Seconds,2)\n        }\n    else {\n      srsUpdate = `\n     SRS Update Status : `+srsUpdateok\n        }\n////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////\n//LotATC Updater\nvar lotUpdateok = \"INACTIVE\";\nvar lotUpdate = \"\";\n    if(msg.PS.Status.Update.LOT_Updater.IsActive) {\n\t\tif(msg.PS.Status.Update.LOT_updater.Responding) {lotUpdateok = `RUNNING`} else {lotUpdateok = `NOT RESPONDING`}\n    lotUpdate = `\n  LotATC Update Status : `+lotUpdateok+`\n   LotATC Update Ticks : `+msg.PS.Status.Update.LOT_updater.Ticks+`\n    LotATC Update Time : `+pad(msg.PS.Status.Update.LOT_updater.RunTime.Days,2)+ `:`+pad(msg.PS.Status.Update.LOT_updater.RunTime.Hours,2)+`:`+pad(msg.PS.Status.Update.LOT_updater.RunTime.Minutes,2)+`:`+pad(msg.PS.Status.Update.LOT_updater.RunTime.Seconds,2)\n        }\n    else {\n      lotUpdate = `\n  LotATC Update Status : `+lotUpdateok\n        }\n////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////\n////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////        \n//GAME PROCESSES////////////////////////////////////////////////////////////////////////////////////////////////////////\n////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////\n//DCS\nvar dcsok = \"OFFLINE\";\nvar dcs = \"\";\n    if(msg.PS.Status.Game.DCS.IsActive) {\n\t\tif(msg.PS.Status.Game.DCS.Responding) {dcsok = `OK`} else {dcsok = `NOT RESPONDING`}\n        dcs = `\n              #### DCS   INFO ####\n     DCS Server Status : `+dcsok+`\n    InGame Server Name : `+msg.PS.Details.Config.DCS.ServerName+`\n               Version : `+msg.PS.Details.Config.DCS.Version+`\n            DCS UpTime : `+pad(msg.PS.Status.Game.DCS.RunTime.Days,2)+ `:`+pad(msg.PS.Status.Game.DCS.RunTime.Hours,2)+`:`+pad(msg.PS.Status.Game.DCS.RunTime.Minutes,2)+`:`+pad(msg.PS.Status.Game.DCS.RunTime.Seconds,2)+`\n      Process Priority : `+GetPriority(msg.PS.Status.Game.DCS.PriorityClass)+`\n           Server Port : `+msg.PS.Details.Config.DCS.Port+`\n              Password : `+msg.PS.Details.Config.DCS.Passwrd+`\n           Max Players : `+msg.PS.Details.Config.DCS.MaxPlayers+`\n      Max Ping Allowed : `+msg.PS.Details.Config.DCS.MaxPing+`ms\n\n          ##### LotATC   INFO ####\n        LotATC Version : `+msg.PS.Details.Config.LotATC.Version+`\n           LotATC Port : `+msg.PS.Details.Config.LotATC.Port+`\n              Blue Pwd : `+msg.PS.Details.Config.LotATC.BluPWD+`\n               Red Pwd : `+msg.PS.Details.Config.LotATC.RedPWD+`\n\n          #### TACview   INFO ####\n               Version : `+msg.PS.Details.Config.Tacview.Version+`\n          TACview Port : `+msg.PS.Details.Config.Tacview.Port+`\n                 Delay : `+msg.PS.Details.Config.Tacview.Delay+`\n            Client Pwd : `+msg.PS.Details.Config.Tacview.ClientPWD\n        }\n    else {\n        dcs = `\n              #### DCS   INFO ####\n     DCS Server Status : `+dcsok+`\n    InGame Server Name : `+msg.PS.Details.Config.DCS.ServerName+`\n               Version : `+msg.PS.Details.Config.DCS.Version+`\n           Server Port : `+msg.PS.Details.Config.DCS.Port+`\n              Password : `+msg.PS.Details.Config.DCS.Passwrd+`\n           Max Players : `+msg.PS.Details.Config.DCS.MaxPlayers+`\n      Max Ping Allowed : `+msg.PS.Details.Config.DCS.MaxPing+`ms\n    \n           #### LotATC   INFO ####\n               Version : `+msg.PS.Details.Config.LotATC.Version+`\n           LotATC Port : `+msg.PS.Details.Config.LotATC.Port+`\n              Blue Pwd : `+msg.PS.Details.Config.LotATC.BluPWD+`\n               Red Pwd : `+msg.PS.Details.Config.LotATC.RedPWD+`\n    \n          #### TACview   INFO ####\n       TACview Version : `+msg.PS.Details.Config.Tacview.Version+`\n          TACview Port : `+msg.PS.Details.Config.Tacview.Port+`\n                 Delay : `+msg.PS.Details.Config.Tacview.Delay+`\n            Client Pwd : `+msg.PS.Details.Config.Tacview.ClientPWD\n        }\n////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////        \n//SRS            \nvar srsok = \"OFFLINE\";\nvar srs = \"\";\n    if(msg.PS.Status.Game.SRS.IsActive) {\n\t\tif(msg.PS.Status.Game.SRS.Responding) {srsok = `OK`} else {srsok = `NOT RESPONDING`}\n        srs = `\n              #### SRS   INFO ####\n                Status : `+srsok+`\n               Version : `+msg.PS.Details.Config.SRS.Version+`\n            SRS UpTime : `+pad(msg.PS.Status.Game.SRS.RunTime.Days,2)+ `:`+pad(msg.PS.Status.Game.SRS.RunTime.Hours,2)+`:`+pad(msg.PS.Status.Game.SRS.RunTime.Minutes,2)+`:`+pad(msg.PS.Status.Game.SRS.RunTime.Seconds,2)+`\n      Process Priority : `+GetPriority(msg.PS.Status.Game.SRS.PriorityClass)+`\n           Server Port : `+msg.PS.Details.Config.SRS.Port+`\n              Blue Pwd : `+msg.PS.Details.Config.SRS.BluPWD+`\n               Red Pwd : `+msg.PS.Details.Config.SRS.RedPWD\n        }\n    else {\n        srs = `\n              #### SRS   INFO ####\n                Status : `+srsok+`\n               Version : `+msg.PS.Details.Config.SRS.Version+`\n           Server Port : `+msg.PS.Details.Config.SRS.Port+`\n              Blue Pwd : `+msg.PS.Details.Config.SRS.BluPWD+`\n               Red Pwd : `+msg.PS.Details.Config.SRS.RedPWD\n        }\n\nvar transmit = `Requested by `+responsee+` \\`\\`\\` DETAILED REPORT for ` +DDC2.ServerID+ ` as at ` +localdatetime+`\n `+serverMSG+` \n `+dcs+`\n `+srs+`\n `+dcsUpdate+`\n `+srsUpdate+`\n `+lotUpdate+`\n  \\`\\`\\`*Request completed in `+ttc+`*` \n//LOG/SECTION//////////////////////////////////////////////////////////////////////////\nvar access = \"DENIED\";\nif (msg.message.authorized) {access = \"GRANTED\"}\nvar logmsg = ` \\`\\`\\`    TimeStamp: ` +localdatetime+ `\n     RequestID: `+msg._msgid+`\n     Requestor: `+usrname+ `\n  Request Type: ` +msg.message.request+ `\n       Raw Msg: `+msg.message.raw+`\n     Responder: ` +DDC2.ServerID+ `\n        Access: ` +access+ `\n      Comments: Request completed in `+ttc+`\\`\\`\\` `\nvar logsend = {\"payload\": logmsg};\n//TRANSMIT/SECTION/////////////////////////////////////////////////////////////////////\nmsg.payload = transmit\n\nnode.status({fill:\"green\",shape:\"ring\",text: \"Reports Sent: \"+MsgSent});\ncontext.set('MsgSent', (MsgSent + 1));\n\nreturn [[msg],[logsend]];\n}",
-        "outputs": 2,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "x": 430,
-        "y": 1540,
-        "wires": [
-            [],
-            []
-        ],
-        "inputLabels": [
-            "Powershell Output"
-        ],
-        "outputLabels": [
-            "Server-Status",
-            "Server-Log"
-        ],
-        "icon": "node-red/envelope.svg"
-    },
-    {
         "id": "e34c961a.d773a8",
         "type": "exec",
         "z": "706974d2.aeef8c",
@@ -556,7 +481,7 @@
         "timer": "",
         "oldrc": false,
         "name": "PowerShell",
-        "x": 556,
+        "x": 364,
         "y": 240,
         "wires": [
             [
@@ -585,8 +510,8 @@
             "4d5772e9.365a3c",
             "b45f38a8.1aa4a8"
         ],
-        "x": 301,
-        "y": 400,
+        "x": 330,
+        "y": 420,
         "wires": [
             [
                 "dbb20807.995bd8"
@@ -614,6 +539,11 @@
             {
                 "t": "eq",
                 "v": "!stop",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "!autostart",
                 "vt": "str"
             },
             {
@@ -664,8 +594,8 @@
         ],
         "checkall": "false",
         "repair": false,
-        "outputs": 12,
-        "x": 775,
+        "outputs": 13,
+        "x": 663,
         "y": 240,
         "wires": [
             [
@@ -676,6 +606,9 @@
             ],
             [
                 "3e3f06.f45790fa"
+            ],
+            [
+                "76ee52b5.a1731c"
             ],
             [
                 "76ee52b5.a1731c"
@@ -712,9 +645,10 @@
             "!init",
             "!radio",
             "!stop",
+            "",
             "!status",
             "!update",
-            null,
+            "",
             "!access",
             "",
             "!start",
@@ -740,7 +674,7 @@
         "wires": [
             [
                 "11ef3fe.fcf79c",
-                "a88d9103.dab59"
+                "8788e9bc.af7e28"
             ]
         ],
         "inputLabels": [
@@ -812,7 +746,7 @@
         "noerr": 0,
         "initialize": "",
         "finalize": "",
-        "x": 420,
+        "x": 400,
         "y": 100,
         "wires": [],
         "icon": "font-awesome/fa-question"
@@ -828,8 +762,8 @@
         "syntax": "mustache",
         "template": "```\n         TimeStamp: {{{message.FormattedTime}}}\n         Requestor: {{{author.username}}}\n      Request Type: {{{message.request}}}\n         Responder: {{{flow.DDC2.ServerInfo.ServerID}}}\n           Raw Msg: {{{message.raw}}}\n    RequestChannel: {{{message.RequestChannel}}}\nRequest Channel ID: {{{message.RequestChannelID}}}\n        Request ID: {{{_msgid}}}\n     Authorization: {{{message.access}}}\n          Comments: {{{message.comment}}}{{#message.TTC}}. Time To Complete = {{{message.TTC}}}{{/message.TTC}}\n```",
         "output": "str",
-        "x": 374,
-        "y": 460,
+        "x": 341,
+        "y": 480,
         "wires": [
             [
                 "56246863.7e6688"
@@ -846,8 +780,8 @@
         "noerr": 0,
         "initialize": "",
         "finalize": "",
-        "x": 261,
-        "y": 460,
+        "x": 236,
+        "y": 480,
         "wires": [
             [
                 "bb4c5242.c21b6"
@@ -867,8 +801,8 @@
         "syntax": "mustache",
         "template": "{{#message.Notification}}```{{{message.Notification}}}```\n{{#message.TCC}}Request completed in {{{message.TCC}}}{{/message.TCC}}{{/message.Notification}}",
         "output": "str",
-        "x": 316,
-        "y": 340,
+        "x": 291,
+        "y": 360,
         "wires": [
             [
                 "d12a7282.e4cbb"
@@ -885,8 +819,8 @@
         "noerr": 0,
         "initialize": "",
         "finalize": "",
-        "x": 406,
-        "y": 700,
+        "x": 340,
+        "y": 660,
         "wires": []
     },
     {
@@ -981,14 +915,14 @@
         "checkall": "false",
         "repair": false,
         "outputs": 16,
-        "x": 661,
+        "x": 655,
         "y": 860,
         "wires": [
             [
                 "d4a8aae3.8f1a38"
             ],
             [
-                "d4a8aae3.8f1a38"
+                "7f47a4ff.8c4cac"
             ],
             [
                 "d4a8aae3.8f1a38"
@@ -1078,29 +1012,6 @@
         "l": false
     },
     {
-        "id": "670cc1b9.3c5f2",
-        "type": "function",
-        "z": "706974d2.aeef8c",
-        "name": "TEST",
-        "func": "var DDC2 = flow.get('DDC2');\nvar Func = flow.get('Func');\n\nmsg.data = {\n    \"createdTimestamp\": Date.now()\n    }\n\nvar ttc = Func.DaysBetween((new Date(msg.data.createdTimestamp)), new Date());\n\nmsg.message = {\n    \"TTC\": ttc\n    }\n\nmsg.channel = {\n    \"id\": DDC2.Channel.Admin\n    }\n//DDC2.AppConfig.LotATC.Installed = false;\nreturn msg;\n\n// DONT PUT ON INSTANT MESSAGES **Request Completed in {{{message.TTC}}}**",
-        "outputs": 1,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "x": 770,
-        "y": 1620,
-        "wires": [
-            []
-        ],
-        "inputLabels": [
-            "CnC-CORE"
-        ],
-        "outputLabels": [
-            "Server-Status"
-        ],
-        "icon": "node-red/envelope.svg"
-    },
-    {
         "id": "2154b487.6c9bac",
         "type": "function",
         "z": "706974d2.aeef8c",
@@ -1138,8 +1049,8 @@
             "3629769a.9425ea",
             "11ef3fe.fcf79c"
         ],
-        "x": 201,
-        "y": 400,
+        "x": 176,
+        "y": 420,
         "wires": [
             [
                 "1b78a82b.e34c58",
@@ -1155,8 +1066,8 @@
         "links": [
             "1ba74911.0102c7"
         ],
-        "x": 661,
-        "y": 580,
+        "x": 655,
+        "y": 540,
         "wires": []
     },
     {
@@ -1169,7 +1080,7 @@
             "b7ef7da7.fc86f",
             "62879f47.91c61"
         ],
-        "x": 441,
+        "x": 264,
         "y": 240,
         "wires": [
             [
@@ -1184,10 +1095,11 @@
         "name": "LOG ONLY",
         "links": [
             "75d56734.f35c58",
-            "1de0b76d.940129"
+            "1de0b76d.940129",
+            "f3c0a2b5.2a5f4"
         ],
-        "x": 201,
-        "y": 460,
+        "x": 176,
+        "y": 480,
         "wires": [
             [
                 "dfd2c6e3.dd0ef8"
@@ -1249,7 +1161,7 @@
         "fieldType": "msg",
         "format": "handlebars",
         "syntax": "mustache",
-        "template": "Your help request is being actioned by {{{flow.DDC2.ServerInfo.ServerID}}}...\n```\n{{#message.Help.Help}}\nWelcome to the DDC2 help system. This version of DDC2 has the following command available:\n\n       help        : Will display this dialogue\n       test        : All DDC2 servers listening in a channel respond to show connectivity.\n       start       : Starts DCS and supporting applications\n       stop        : Stops DCS and supporting applications\n       restart     : Restarts DCS and supporting applications\n       status      : Returns information on the status of the server\n       update      : Updates DCS and supporting applications (excluding TacView currently)\n       access      : Enables Console access to the server by modifying firewall rules\n       reboot      : Reboots the Operating system DDC2 and DCS reside on\n       refresh     : Refreshs the configuration from the DDC2 config files\n       radio       : Converts discord messages to audio and transmits them through SRS\n       ports       : Displays all the ports set in the configuration files for DCS and supporting applications\n       config      : Displays configuration data for the server and applications\n       version     : Displays the versions of DCS and supporting applications\n       info        : Displays connection information and passwords for the server\n       support     : Displays support information for your server / community\n\nData will be displayed in a similar way as below.\n#############################################\n           Command : Help\n\n       Description : Shows Help Dialogue, make sure you exclude the '!' when specifying the command you need help with.\n\nExecution Duration : Instant, Cached Response\n\n            Useage : !help\n\t\t\tUseage : !help command\n\n         Example 1 : !help\n         Example 2 : !help start\n         Example 3 : !help access\n#############################################\n{{/message.Help.Help}}{{#message.Help.Test}}\n#############################################\n           Command : Test\n   \n       Description : Test is used to validate communications between DDC2 instances and Discord. \n\nExecution Duration : Instant, Cached Response\n \n            Useage : !test\n            \n           Example : !test\n#############################################\n{{/message.Help.Test}}{{#message.Help.Start}}\n#############################################\n           Command : Start\n   \n       Description : Start command is used to start DCS and the supporting application processes. \n\nExecution Duration : Approximately 90 seconds depending on your server specifications.\n \n            Useage : !start servername\n        \n           Example : !start ddc2-dev\n#############################################\n{{/message.Help.Start}}{{#message.Help.Stop}}\n#############################################\n           Command : Stop\n   \n       Description : Stop command is used to stop DCS and the supporting application processes. \n\nExecution Duration : Approximately 3 seconds depending on your server specifications.\n \n            Useage : !stop servername\n            \n           Example : !stop ddc2-dev\n#############################################\n{{/message.Help.Stop}}{{#message.Help.Restart}}\n#############################################\n           Command : Restart\n   \n       Description : Restart command is used to stop and then start DCS and the supporting application processes. \n\nExecution Duration : Approximately 90 seconds depending on your server specifications.\n \n            Useage : !restart servername\n            \n           Example : !restart ddc2-dev\n#############################################\n{{/message.Help.Restart}}{{#message.Help.Status}}\n#############################################\n           Command : Status\n   \n       Description : Status command returns a message showing the current server system state, data including CPU load, RAM load, Process duration, Process health check and other details.\n\nExecution Duration : Approximately 3 seconds depending on your server specifications.\n \n            Useage : !status servername\n            \n           Example : !status ddc2-dev\n#############################################            \n{{/message.Help.Status}}{{#message.Help.Update}}\n#############################################\n           Command : Update\n   \n       Description : Update command will check if their are DCS or supporting application processes running, if processes are found to be running update will not execute. This was done to stop accidental updating taking place on servers with multiple DCS instances running on them. The update command will respond every 60 seconds with an update on the progress on the updates. \n\nExecution Duration : Time can vary due to internet speed, etc. Responses should begin within 60 seconds.\n \n             Useage: !update servername\n            \n            Example: !update ddc2-dev\n#############################################\n{{/message.Help.Update}}{{#message.Help.Access}}\n#############################################\n           Command : Access\n   \n       Description : Grants Console Access to the Server through modification of firewall rules. If no connection is achieved to the specific IP address within an allotted time the server will remove the firewall rule.\n\nExecution Duration : Less than 10 seconds but will remove the firewall within an alloted time after the connection is no longer detected. (Note, you must know your internet IP address to enter into this command, not your local interface address). Note: Output only displayed in Admin Channel\n \n            Useage : !access servername IPv4Address\n            \n           Example : !access ddc2-dev 254.254.254.254\n#############################################\n{{/message.Help.Access}}{{#message.Help.Reboot}}\n#############################################\n           Command : Reboot\n   \n       Description : Reboot will restart the servers operating system. The server will respond during the DDC2 AutoStart (enabled by default) sequence on successful reboot event.\n\nExecution Duration : It's Windows, could be 20 seconds, could be 30 minutes. Best to go get a cuppa tea and a few cookies.\n \n             Useage : !reboot servername\n            \n            Example : !reboot ddc2-dev\n#############################################\n{{/message.Help.Reboot}}{{#message.Help.Refresh}}\n#############################################\n           Command : Refresh\n   \n       Description : Refresh re-reads the ddc2 configuration files and loads the new configuration into Node-Red for use by the DDC2 flow. Great command for tweaking your server configuration without the need to re-deploy the Node-Red Flow.\n\nExecution Duration : Approximately 3 seconds\n \n            Useage : !refresh servername\n            \n           Example : !refresh ddc2-dev\n#############################################\n{{/message.Help.Refresh}}{{#message.Help.Ports}}\n#############################################\n           Command : Ports\n   \n       Description : Ports displays all the server ports from DCS and supporting application configuration files.\n       \n              Note : Output only displayed in Admin Channel due to the sensitivity of the data provided.\n\nExecution Duration : Instant, Cached Response\n \n            Useage : !ports servername\n            \n           Example : !ports ddc2-dev\n#############################################\n{{/message.Help.Ports}}{{#message.Help.Config}}\n#############################################\n           Command : Config\n   \n       Description : Config displays configuration settings in . \n \nValid Applications : dcs  # DCS\n                     srs  # SRS\n                     lot  # LotATC\n                     tac  # TacView\n                     ddc2 # DDC2\n \n              Note : Output only displayed in Admin Channel due to the sensitivity of the data provided.\n\nExecution Duration : Instant, Cached Response\n \n            Useage : !config servername application\n            \n         Example 1 : !config ddc2-dev dcs\n         Example 2 : !config ddc2-dev lot\n         Example 3 : !config ddc2-dev tac\n         Example 4 : !config ddc2-dev ddc2\n         Example 5 : !config ddc2-dev           #This will also display the DDC2 Configuration\n#############################################\n{{/message.Help.Config}}{{#message.Help.Version}}\n#############################################\n           Command : Version\n   \n       Description : Version displays the versions of DCS and supporting applications installed on the server. (Including DDC2)\n       \nExecution Duration : Instant, Cached Response\n \n            Useage : !version servername\n            \n           Example : !version ddc2-dev\n#############################################\n{{/message.Help.Version}}{{#message.Help.Info}}\n#############################################\n           Command : Info\n   \n       Description : Info displays connection information (including passwords). This command produces different output depending on where the command is executed. DDC2 settings also change the output of this command, they are listed below.\n     DDC2 Settings : ShowLotATC         # Boolean to allow LotATC connection information to be displayed in non-Admin Channels\n                     ShowTACView        # Boolean to allow TacView connection information to be displayed in non-Admin Channels    \n                     ShowSrvPWD         # Boolean to allow Server Passwords to be displayed in non-Admin Channels (good setting for Private Servers managed publicly)\n                     \n Channel Execution : Admin Channel      # Disregards DDC2 Settings and displays all connection information\n                     Blue Force Channel # Considers DDC2 Settings and only displays Blue Force passwords                     \n                     Red Force Channel  # Considers DDC2 Settings and only displays Red Force passwords\n                     Support / Other    # Considers DDC2 Settings but does not display any Red or Blue passwords\n\nExecution Duration : Instant, Cached Response\n \n            Useage : !info servername\n            \n           Example : !info ddc2-dev \n#############################################\n{{/message.Help.Info}}{{#message.Help.Support}}\n#############################################\n           Command : Support\n   \n       Description : Support displays information on how, where and when to best contact the server support team. Message will change when request is used within the DDC2 designated support channel.\n       \nExecution Duration : Instant, Cached Response\n \n            Useage : !support servername\n            \n           Example : !support ddc2-dev\n#############################################\n{{/message.Help.Support}}{{#message.Help.Radio}}\n#############################################\n           Command : Radio\n   \n       Description : Radio command converts Discord text messages to Voice Radio messages on SRS. If no data other than the message is given it will use the server default settings.\n DDC2 SRS Defaults : Frequency  = {{{flow.DDC2.AppConfig.SRS.DDC2_FREQ}}}   # GLOBAL_LOBBY_FREQUENCIES setting in the SRS config file server.cfg\n                     Freq High  = {{{flow.DDC2.AppConfig.SRS.DDC2_HIGH}}}  # Highest frequency supported by DDC2 Text to Radio\n                     Freq Low   = {{{flow.DDC2.AppConfig.SRS.DDC2_LOW}}}   # Lowest frequency supported by DDC2 Text to Radio\n                     Modulation = {{{flow.DDC2.AppConfig.SRS.DDC2_MOD}}}    # Hard set in DDC2 Settings, Currently only AM is supported, not changable at present\n                     Volume     = {{{flow.DDC2.AppConfig.SRS.DDC2_VOL}}}    # Hard set in DDC2 Settings, not changable at present\n                     Coalition  = {{{flow.DDC2.AppConfig.SRS.DDC2_COAL}}}    # Options are : 0 = Neutral / Spectators ; 1 = Red force ; 2 = Blue force\n\nExecution Duration : Approximately 6 seconds depending on the length of your message.\n\n            Useage : !radio servername -freq frequency -coal coalition -msg \"message\"\n        \n         Example 1 : !radio servername -freq 122.5 -coal 1 -msg \"This is a message for Red Force on 122.5 A M\"\n         Example 2 : !radio servername -msg \"This is a message using the servers default frequency of {{{flow.DDC2.AppConfig.SRS.DDC2_FREQ}}} A M to the default coalition setting of {{{flow.DDC2.AppConfig.SRS.DDC2_COAL}}}\"\n         Example 3 : !radio servername -coal 2 -msg \"This is a message using the servers default frequency of {{{flow.DDC2.AppConfig.SRS.DDC2_FREQ}}} A M to the Blue Forces\"\n         Example 4 : !radio servername -freq -5000 -coal 2 -msg \"This message will not transmit because the frequency is not between {{{flow.DDC2.AppConfig.SRS.DDC2_LOW}}} and {{{flow.DDC2.AppConfig.SRS.DDC2_HIGH}}} Mhz.\"\n#############################################\n{{/message.Help.Radio}}\n```",
+        "template": "Your help request is being actioned by {{{flow.DDC2.ServerInfo.ServerID}}}...\n```\n{{#message.Help.Help}}\nWelcome to the DDC2 help system. This version of DDC2 has the following command available:\n\n       help        : Will display this dialogue\n       test        : All DDC2 servers listening in a channel respond to show connectivity.\n       start       : Starts DCS and supporting applications\n       stop        : Stops DCS and supporting applications\n       restart     : Restarts DCS and supporting applications\n       status      : Returns information on the status of the server\n       update      : Updates DCS and supporting applications (excluding TacView currently)\n       access      : Enables Console access to the server by modifying firewall rules\n       reboot      : Reboots the Operating system DDC2 and DCS reside on\n       refresh     : Refreshs the configuration from the DDC2 config files\n       radio       : Converts discord messages to audio and transmits them through SRS\n       ports       : Displays all the ports set in the configuration files for DCS and supporting applications\n       config      : Displays configuration data for the server and applications\n       version     : Displays the versions of DCS and supporting applications\n       info        : Displays connection information and passwords for the server\n       support     : Displays support information for your server / community\n\nData will be displayed in a similar way as below.\n#############################################\n           Command : Help\n\n       Description : Shows Help Dialogue, make sure you exclude the '!' when specifying the command you need help with.\n\nExecution Duration : Instant, Cached Response\n\n            Useage : !help\n\t\t\tUseage : !help command\n\n         Example 1 : !help\n         Example 2 : !help start\n         Example 3 : !help access\n#############################################\n{{/message.Help.Help}}{{#message.Help.Test}}\n#############################################\n           Command : Test\n   \n       Description : Test is used to validate communications between DDC2 instances and Discord. \n\nExecution Duration : Instant, Cached Response\n \n            Useage : !test\n            \n           Example : !test\n#############################################\n{{/message.Help.Test}}{{#message.Help.Start}}\n#############################################\n           Command : Start\n   \n       Description : Start command is used to start DCS and the supporting application processes. \n\nExecution Duration : Approximately 90 seconds depending on your server specifications.\n \n            Useage : !start servername\n        \n           Example : !start ddc2-dev\n#############################################\n{{/message.Help.Start}}{{#message.Help.Stop}}\n#############################################\n           Command : Stop\n   \n       Description : Stop command is used to stop DCS and the supporting application processes. \n\nExecution Duration : Approximately 15 seconds depending on your server specifications.\n\n            Useage : !stop servername process\n\n         Example 1 : !stop ddc2-dev         #Stops DCS & SRS Processes (Default Action)\n         Example 2 : !stop ddc2-dev -dcs    #Stops DCS Process Only\n         Example 3 : !stop ddc2-dev -srs    #Stops SRS Process Only\n         Example 4 : !stop ddc2-dev -game   #Stops DCS & SRS Processes\n         Example 5 : !stop ddc2-dev -update #Stops DCS & SRS & LotATC Update Processes\n         Example 6 : !stop ddc2-dev -all    #Stops All Game and Update Processes\n#############################################\n{{/message.Help.Stop}}{{#message.Help.Restart}}\n#############################################\n           Command : Restart\n   \n       Description : Restart command is used to stop and then start DCS and the supporting application processes. \n\nExecution Duration : Approximately 90 seconds depending on your server specifications.\n \n            Useage : !restart servername\n            \n           Example : !restart ddc2-dev\n#############################################\n{{/message.Help.Restart}}{{#message.Help.Status}}\n#############################################\n           Command : Status\n   \n       Description : Status command returns a message showing the current server system state, data including CPU load, RAM load, Process duration, Process health check and other details.\n\nExecution Duration : Approximately 15 seconds depending on your server specifications.\n \n            Useage : !status servername\n            \n           Example : !status ddc2-dev\n#############################################            \n{{/message.Help.Status}}{{#message.Help.Update}}\n#############################################\n           Command : Update\n   \n       Description : Update command will check if their are DCS or supporting application processes running, if processes are found to be running update will not execute. This was done to stop accidental updating taking place on servers with multiple DCS instances running on them. The update command will respond every 60 seconds with an update on the progress on the updates. \n\nExecution Duration : Time can vary due to internet speed, etc. Responses should begin within 60 seconds.\n \n             Useage: !update servername\n            \n            Example: !update ddc2-dev\n#############################################\n{{/message.Help.Update}}{{#message.Help.Access}}\n#############################################\n           Command : Access\n   \n       Description : Grants Console Access to the Server through modification of firewall rules. If no connection is achieved to the specific IP address within an allotted time the server will remove the firewall rule.\n\nExecution Duration : Less than 15 seconds but will remove the firewall within an alloted time after the connection is no longer detected. (Note, you must know your internet IP address to enter into this command, not your local interface address). Note: Output only displayed in Admin Channel\n \n            Useage : !access servername IPv4Address\n            \n           Example : !access ddc2-dev 254.254.254.254\n#############################################\n{{/message.Help.Access}}{{#message.Help.Reboot}}\n#############################################\n           Command : Reboot\n   \n       Description : Reboot will restart the servers operating system. The server will respond during the DDC2 AutoStart (enabled by default) sequence on successful reboot event.\n\nExecution Duration : It's Windows, could be 20 seconds, could be 30 minutes. Best to go get a cuppa tea and a few cookies.\n \n             Useage : !reboot servername\n            \n            Example : !reboot ddc2-dev\n#############################################\n{{/message.Help.Reboot}}{{#message.Help.Refresh}}\n#############################################\n           Command : Refresh\n   \n       Description : Refresh re-reads the ddc2 configuration files and loads the new configuration into Node-Red for use by the DDC2 flow. Great command for tweaking your server configuration without the need to re-deploy the Node-Red Flow.\n\nExecution Duration : Approximately 3 seconds\n \n            Useage : !refresh servername\n            \n           Example : !refresh ddc2-dev\n#############################################\n{{/message.Help.Refresh}}{{#message.Help.Ports}}\n#############################################\n           Command : Ports\n   \n       Description : Ports displays all the server ports from DCS and supporting application configuration files.\n       \n              Note : Output only displayed in Admin Channel due to the sensitivity of the data provided.\n\nExecution Duration : Instant, Cached Response\n \n            Useage : !ports servername\n            \n           Example : !ports ddc2-dev\n#############################################\n{{/message.Help.Ports}}{{#message.Help.Config}}\n#############################################\n           Command : Config\n   \n       Description : Config displays configuration settings in . \n \nValid Applications : dcs  # DCS\n                     srs  # SRS\n                     lot  # LotATC\n                     tac  # TacView\n                     ddc2 # DDC2\n \n              Note : Output only displayed in Admin Channel due to the sensitivity of the data provided.\n\nExecution Duration : Instant, Cached Response\n \n            Useage : !config servername application\n            \n         Example 1 : !config ddc2-dev -dcs\n         Example 2 : !config ddc2-dev -lot\n         Example 3 : !config ddc2-dev -tac\n         Example 4 : !config ddc2-dev -ddc2\n         Example 5 : !config ddc2-dev           #This will also display the DDC2 Configuration\n#############################################\n{{/message.Help.Config}}{{#message.Help.Version}}\n#############################################\n           Command : Version\n   \n       Description : Version displays the versions of DCS and supporting applications installed on the server. (Including DDC2)\n       \nExecution Duration : Instant, Cached Response\n \n            Useage : !version servername\n            \n           Example : !version ddc2-dev\n#############################################\n{{/message.Help.Version}}{{#message.Help.Info}}\n#############################################\n           Command : Info\n   \n       Description : Info displays connection information (including passwords). This command produces different output depending on where the command is executed. DDC2 settings also change the output of this command, they are listed below.\n     DDC2 Settings : ShowLotATC         # Boolean to allow LotATC connection information to be displayed in non-Admin Channels\n                     ShowTACView        # Boolean to allow TacView connection information to be displayed in non-Admin Channels    \n                     ShowSrvPWD         # Boolean to allow Server Passwords to be displayed in non-Admin Channels (good setting for Private Servers managed publicly)\n                     \n Channel Execution : Admin Channel      # Disregards DDC2 Settings and displays all connection information\n                     Blue Force Channel # Considers DDC2 Settings and only displays Blue Force passwords                     \n                     Red Force Channel  # Considers DDC2 Settings and only displays Red Force passwords\n                     Support / Other    # Considers DDC2 Settings but does not display any Red or Blue passwords\n\nExecution Duration : Instant, Cached Response\n \n            Useage : !info servername\n            \n           Example : !info ddc2-dev \n#############################################\n{{/message.Help.Info}}{{#message.Help.Support}}\n#############################################\n           Command : Support\n   \n       Description : Support displays information on how, where and when to best contact the server support team. Message will change when request is used within the DDC2 designated support channel.\n       \nExecution Duration : Instant, Cached Response\n \n            Useage : !support servername\n            \n           Example : !support ddc2-dev\n#############################################\n{{/message.Help.Support}}{{#message.Help.Radio}}\n#############################################\n           Command : Radio\n   \n       Description : Radio command converts Discord text messages to Voice Radio messages on SRS. If no data other than the message is given it will use the server default settings.\n DDC2 SRS Defaults : Frequency  = {{{flow.DDC2.AppConfig.SRS.DDC2_FREQ}}}   # GLOBAL_LOBBY_FREQUENCIES setting in the SRS config file server.cfg\n                     Freq High  = {{{flow.DDC2.AppConfig.SRS.DDC2_HIGH}}}  # Highest frequency supported by DDC2 Text to Radio\n                     Freq Low   = {{{flow.DDC2.AppConfig.SRS.DDC2_LOW}}}   # Lowest frequency supported by DDC2 Text to Radio\n                     Modulation = {{{flow.DDC2.AppConfig.SRS.DDC2_MOD}}}    # Hard set in DDC2 Settings, Currently only AM is supported, not changable at present\n                     Volume     = {{{flow.DDC2.AppConfig.SRS.DDC2_VOL}}}    # Hard set in DDC2 Settings, not changable at present\n                     Coalition  = {{{flow.DDC2.AppConfig.SRS.DDC2_COAL}}}    # Options are : 0 = Neutral / Spectators ; 1 = Red force ; 2 = Blue force\n\nExecution Duration : Approximately 10 seconds depending on the length of your message.\n\n            Useage : !radio servername -freq frequency -coal coalition -msg \"message\"\n        \n         Example 1 : !radio servername -freq 122.5 -coal 1 -msg \"This is a message for Red Force on 122.5 A M\"\n         Example 2 : !radio servername -msg \"This is a message using the servers default frequency of {{{flow.DDC2.AppConfig.SRS.DDC2_FREQ}}} A M to the default coalition setting of {{{flow.DDC2.AppConfig.SRS.DDC2_COAL}}}\"\n         Example 3 : !radio servername -coal 2 -msg \"This is a message using the servers default frequency of {{{flow.DDC2.AppConfig.SRS.DDC2_FREQ}}} A M to the Blue Forces\"\n         Example 4 : !radio servername -freq -5000 -coal 2 -msg \"This message will not transmit because the frequency is not between {{{flow.DDC2.AppConfig.SRS.DDC2_LOW}}} and {{{flow.DDC2.AppConfig.SRS.DDC2_HIGH}}} Mhz.\"\n#############################################\n{{/message.Help.Radio}}\n```",
         "output": "str",
         "x": 1221,
         "y": 1200,
@@ -1403,25 +1315,8 @@
         "links": [
             "1a4b1d9.9c259e2"
         ],
-        "x": 661,
-        "y": 700,
-        "wires": []
-    },
-    {
-        "id": "986d403.37697c",
-        "type": "debug",
-        "z": "706974d2.aeef8c",
-        "name": "",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 610,
-        "y": 1480,
+        "x": 655,
+        "y": 660,
         "wires": []
     },
     {
@@ -1441,7 +1336,7 @@
         "type": "function",
         "z": "706974d2.aeef8c",
         "name": "Status Post-Processing",
-        "func": "////Initialize Variables\nvar Func = flow.get('Func');\nvar DDC2 = flow.get('DDC2');\n\nflow.set('DDC2.Status', msg.PS);\n////////////////////////////////////////////////////////////////////////////////////////////////////\nvar ttc = Func.DaysBetween((new Date(msg.data.createdTimestamp)), new Date());\nmsg.message.TTC = ttc\nmsg.message.comment = \"Request Actioned\"\n\nmsg.PS.Server.UpTimeStr = Func.pad(msg.PS.Server.UpTime.Days,2)+ `:`+Func.pad(msg.PS.Server.UpTime.Hours,2)+`:`+Func.pad(msg.PS.Server.UpTime.Minutes,2)+`:`+Func.pad(msg.PS.Server.UpTime.Seconds,2)\n\nif(msg.PS.DCS.IsActive === true) {\n    msg.PS.DCS.RunTimeStr = Func.pad(msg.PS.DCS.RunTime.Days,2)+ `:`+Func.pad(msg.PS.DCS.RunTime.Hours,2)+`:`+Func.pad(msg.PS.DCS.RunTime.Minutes,2)+`:`+Func.pad(msg.PS.DCS.RunTime.Seconds,2)\n    msg.PS.DCS.PriorityStr = Func.GetPriority(msg.PS.DCS.PriorityClass)\n}\nif(msg.PS.SRS.IsActive === true) {\n    msg.PS.SRS.RunTimeStr = Func.pad(msg.PS.SRS.RunTime.Days,2)+ `:`+Func.pad(msg.PS.SRS.RunTime.Hours,2)+`:`+Func.pad(msg.PS.SRS.RunTime.Minutes,2)+`:`+Func.pad(msg.PS.SRS.RunTime.Seconds,2)\n    msg.PS.SRS.PriorityStr = Func.GetPriority(msg.PS.SRS.PriorityClass)\n}\n\n\n//msg.message.Notification = DDC2.ServerInfo.ServerID+ ` is wondering how you are seeing this message if the server just restarted before it had a chance to send this message. Will wonders never cease! The task took `+msg.message.TTC+` to complete.`\nmsg.message.Notification = \"\"\n////////////////////////////////////////////////////////////////////////////////////////////////////\n/*\n\nif(msg.PS.SRS.IsActive === true) {\n    msg.PS.SRS = {\n         'RunTimeStr' : Func.padpad(msg.PS.SRS.RunTime.Days,2)+ `:`+Func.pad(msg.PS.SRS.RunTime.Hours,2)+`:`+Func.pad(msg.PS.SRS.RunTime.Minutes,2)+`:`+Func.pad(msg.PS.SRS.RunTime.Seconds,2),\n        'PriorityStr' : Func.GetPriority(msg.PS.SRS.PriorityClass)\n    }\n}\n\n         Server UpTime : `+pad(msg.PS.SRS.RunTime.Days,2)+ `:`+pad(msg.PS.SRS.RunTime.Hours,2)+`:`+pad(msg.PS.SRS.RunTime.Minutes,2)+`:`+pad(msg.PS.SRS.RunTime.Seconds,2)+`\nFunc.GetPriority(msg.PS.Status.Game.DCS.PriorityClass)\n\n*/\n\nreturn msg",
+        "func": "////Initialize Variables\nvar Func = flow.get('Func');\nvar DDC2 = flow.get('DDC2');\n\nflow.set('DDC2.Status', msg.PS);\n////////////////////////////////////////////////////////////////////////////////////////////////////\nvar ttc = Func.DaysBetween((new Date(msg.data.createdTimestamp)), new Date());\nmsg.message.TTC = ttc\nmsg.message.comment = \"Request Actioned\"\n\nmsg.PS.Server.UpTimeStr = Func.pad(msg.PS.Server.UpTime.Days,2)+ `:`+Func.pad(msg.PS.Server.UpTime.Hours,2)+`:`+Func.pad(msg.PS.Server.UpTime.Minutes,2)+`:`+Func.pad(msg.PS.Server.UpTime.Seconds,2)\n\nif(msg.PS.DCS.IsActive === true) {\n    msg.PS.DCS.RunTimeStr = Func.pad(msg.PS.DCS.RunTime.Days,2)+ `:`+Func.pad(msg.PS.DCS.RunTime.Hours,2)+`:`+Func.pad(msg.PS.DCS.RunTime.Minutes,2)+`:`+Func.pad(msg.PS.DCS.RunTime.Seconds,2)\n    msg.PS.DCS.PriorityStr = Func.GetPriority(msg.PS.DCS.PriorityClass)\n}\nif(msg.PS.SRS.IsActive === true) {\n    msg.PS.SRS.RunTimeStr = Func.pad(msg.PS.SRS.RunTime.Days,2)+ `:`+Func.pad(msg.PS.SRS.RunTime.Hours,2)+`:`+Func.pad(msg.PS.SRS.RunTime.Minutes,2)+`:`+Func.pad(msg.PS.SRS.RunTime.Seconds,2)\n    msg.PS.SRS.PriorityStr = Func.GetPriority(msg.PS.SRS.PriorityClass)\n}\n\n\nif(msg.PS.Updating) {\n\nif (typeof msg.message.Update === 'undefined') {\n    //First Run\n    msg.delay = (DDC2.ServerInfo.UpdateLoop * 1000)\n    msg.message.Update = {\n            \"Status\" : \"Initializing\",\n          \"FirstRun\" : true,\n           \"LOT_Upd\" : \"Update not started\",\n           \"SRS_Upd\" : \"Update not started\",\n           \"DCS_Upd\" : \"Update not started\",\n          \"Finished\" : false\n    }\n} else {\n    if(msg.PS.Updating) {\n        msg.message.Update.Status = \"Updating\"\n        msg.message.Update.FirstRun = false\n        msg.message.Update.Finished = false\n    } else {\n        msg.message.Update.Status = \"Done\"\n        msg.message.Update.FirstRun = false\n        msg.message.Update.Finished = true\n    }\n}\nif(msg.PS.DCS.IsActive) {msg.message.Update.Finished = true}\nif(msg.PS.SRS.IsActive) {msg.message.Update.Finished = true}\n\nif(msg.PS.LOT_Updater.IsActive) {\n    msg.message.Update.LOT_Upd = \"Updating to current \"+DDC2.ServerInfo.LotBuild+\" Build\"\n}\nif(msg.PS.SRS_Updater.IsActive) {\n    msg.message.Update.LOT_Upd = \"Update Complete (\"+DDC2.ServerInfo.LotBuild+\")\"\n    msg.message.Update.SRS_Upd = \"Updating to current \"+DDC2.ServerInfo.SRSBuild+\" Build\"\n}\nif(msg.PS.DCS_Updater.IsActive) {\n    msg.message.Update.LOT_Upd = \"Update Complete (\"+DDC2.ServerInfo.LotBuild+\")\"\n    msg.message.Update.SRS_Upd = \"Update Complete (\"+DDC2.ServerInfo.SRSBuild+\")\"\n    msg.message.Update.DCS_Upd = \"Updating to current \"+DDC2.ServerInfo.DCSBuild+\" Build\"\n}\nif(msg.message.Update.DCS_Upd == \"Updating\") {\n    if (msg.PS.DCS_Updater.Offline) {\n        msg.message.Update.DCS_Upd = \"Update Complete (\"+DDC2.ServerInfo.DCSBuild+\")\"\n    }\n}\nif(DDC2.AppConfig.DCS.Version != msg.PS.DCS.Version) {\n    flow.set('DDC2.AppConfig.DCS.Version', msg.PS.DCS.Lot_Version)\n}\nif(DDC2.AppConfig.LotATC.Version != msg.PS.DCS.Lot_Version) {\n    flow.set('DDC2.AppConfig.LotATC.Version', msg.PS.DCS.Lot_Version)\n}\nif(DDC2.AppConfig.SRS.Version != msg.PS.SRS.Version) {\n    flow.set('DDC2.AppConfig.SRS.Version', msg.PS.SRS.Version)\n}\n\n}\n\nmsg.message.Notification = \"\"\nreturn msg",
         "outputs": 1,
         "noerr": 0,
         "initialize": "",
@@ -1451,8 +1346,7 @@
         "wires": [
             [
                 "c742702e.8cb9f",
-                "1de0b76d.940129",
-                "58b8a435.c2c69c"
+                "f3c0a2b5.2a5f4"
             ]
         ],
         "inputLabels": [
@@ -1472,9 +1366,9 @@
         "fieldType": "msg",
         "format": "handlebars",
         "syntax": "mustache",
-        "template": "```\n                  -=:# DCS Server Status #:=-\n           \n                      DDC2 ID : {{{flow.DDC2.ServerInfo.ServerID}}}\n              CPU Utilization : {{{PS.Server.ProcessorLoad}}} %\n              RAM Utilization : {{{PS.Server.UsedMemPC}}} % - ({{{PS.Server.UsedMemGB}}} GB / {{{PS.Server.TotalMemGB}}} GB)\n                Server Uptime : {{{PS.Server.UpTimeStr}}}\n          Last Server Restart : {{{PS.Server.LastBootUpString}}}\n            DCS Server Status : {{#PS.Updating}}Updating...{{/PS.Updating}}{{#PS.DCS.Offline}}DCS Offline{{/PS.DCS.Offline}}{{#PS.DCS.IsActive}}{{{PS.DCS.Status}}}\n\n           InGame Server Name : {{{flow.DDC2.AppConfig.DCS.name}}}\n           DCS Server Version : {{{PS.DCS.ProductVersion}}}\n            DCS Server Uptime : {{{PS.DCS.RunTimeStr}}}\n             DCS Server Ports : {{{PS.DCS.Ports}}}\n       DCS Server Memory (GB) : {{{PS.DCS.MemGB}}} Used\n          DCS Server Priority : {{{PS.DCS.PriorityStr}}}\n             DCS Server Ticks : {{{PS.DCS.Ticks}}}\n    DCS Server Active Threads : {{{PS.DCS.Threads}}}\n    DCS Server Active Handles : {{{PS.DCS.Handles}}}\n   DCS Server CPU Utilization : {{{PS.DCS.CPULoad}}} %{{/PS.DCS.IsActive}}\n            SRS Server Status : {{#PS.SRS.Offline}}SRS Offline{{/PS.SRS.Offline}}{{{PS.SRS.Status}}}{{#PS.SRS.IsActive}}\n           SRS Server Version : {{{PS.SRS.ProductVersion}}}\n            SRS Server Uptime : {{{PS.SRS.RunTimeStr}}}\n             SRS Server Ports : {{{PS.SRS.Ports}}}\n       SRS Server Memory (GB) : {{{PS.SRS.MemGB}}} Used\n          SRS Server Priority : {{{PS.SRS.PriorityStr}}}\n             SRS Server Ticks : {{{PS.SRS.Ticks}}}\n    SRS Server Active Threads : {{{PS.SRS.Threads}}}\n    SRS Server Active Handles : {{{PS.SRS.Handles}}}\n   SRS Server CPU Utilization : {{{PS.SRS.CPULoad}}} %\n       SRS Current User Count : {{{PS.SRS.ClientCount}}}{{/PS.SRS.IsActive}}{{#PS.SRS.ClientsPresent}}\n                        \n                        SRS Active Users\n{{#PS.SRS.ClientTable.0.Name}}                              - {{{PS.SRS.ClientTable.0.Name}}}{{/PS.SRS.ClientTable.0.Name}}\n{{#PS.SRS.ClientTable.1.Name}}                              - {{{PS.SRS.ClientTable.1.Name}}}{{/PS.SRS.ClientTable.1.Name}}\n{{#PS.SRS.ClientTable.2.Name}}                              - {{{PS.SRS.ClientTable.2.Name}}}{{/PS.SRS.ClientTable.2.Name}}\n{{#PS.SRS.ClientTable.3.Name}}                              - {{{PS.SRS.ClientTable.3.Name}}}{{/PS.SRS.ClientTable.3.Name}}\n{{#PS.SRS.ClientTable.4.Name}}                              - {{{PS.SRS.ClientTable.4.Name}}}{{/PS.SRS.ClientTable.4.Name}}{{/PS.SRS.ClientsPresent}}\n\n{{#PS.Updating}}\nServer Updating!\n\n{{/PS.Updating}}\n```\nRequest completed in {{message.TTC}}",
+        "template": "```\n                  -=:# DCS Server Status #:=-\n           \n                      DDC2 ID : {{{flow.DDC2.ServerInfo.ServerID}}}\n              CPU Utilization : {{{PS.Server.ProcessorLoad}}} %\n              RAM Utilization : {{{PS.Server.UsedMemPC}}} % - ({{{PS.Server.UsedMemGB}}} GB / {{{PS.Server.TotalMemGB}}} GB)\n                Server Uptime : {{{PS.Server.UpTimeStr}}}\n          Last Server Restart : {{{PS.Server.LastBootUpString}}}\n            DCS Server Status : {{#PS.DCS.Offline}}DCS Offline [{{PS.DCS.Version}}]{{/PS.DCS.Offline}}{{#PS.DCS.IsActive}}{{{PS.DCS.Status}}}\n\n           InGame Server Name : {{{flow.DDC2.AppConfig.DCS.name}}}\n           DCS Server Version : {{{PS.DCS.ProductVersion}}}\n            DCS Server Uptime : {{{PS.DCS.RunTimeStr}}}\n             DCS Server Ports : {{{PS.DCS.Ports}}}\n       DCS Server Memory (GB) : {{{PS.DCS.MemGB}}} Used\n          DCS Server Priority : {{{PS.DCS.PriorityStr}}}\n             DCS Server Ticks : {{{PS.DCS.Ticks}}}\n    DCS Server Active Threads : {{{PS.DCS.Threads}}}\n    DCS Server Active Handles : {{{PS.DCS.Handles}}}\n   DCS Server CPU Utilization : {{{PS.DCS.CPULoad}}} %{{/PS.DCS.IsActive}}\n            SRS Server Status : {{#PS.SRS.Offline}}SRS Offline [{{PS.SRS.Version}}]{{/PS.SRS.Offline}}{{{PS.SRS.Status}}}{{#PS.SRS.IsActive}}\n           SRS Server Version : {{{PS.SRS.ProductVersion}}}\n            SRS Server Uptime : {{{PS.SRS.RunTimeStr}}}\n             SRS Server Ports : {{{PS.SRS.Ports}}}\n       SRS Server Memory (GB) : {{{PS.SRS.MemGB}}} Used\n          SRS Server Priority : {{{PS.SRS.PriorityStr}}}\n             SRS Server Ticks : {{{PS.SRS.Ticks}}}\n    SRS Server Active Threads : {{{PS.SRS.Threads}}}\n    SRS Server Active Handles : {{{PS.SRS.Handles}}}\n   SRS Server CPU Utilization : {{{PS.SRS.CPULoad}}} %\n       SRS Current User Count : {{{PS.SRS.ClientCount}}}{{/PS.SRS.IsActive}}{{#PS.SRS.ClientsPresent}}\n                        \n                        SRS Active Users\n{{#PS.SRS.ClientTable.0.Name}}                              - {{{PS.SRS.ClientTable.0.Name}}}{{/PS.SRS.ClientTable.0.Name}}\n{{#PS.SRS.ClientTable.1.Name}}                              - {{{PS.SRS.ClientTable.1.Name}}}{{/PS.SRS.ClientTable.1.Name}}\n{{#PS.SRS.ClientTable.2.Name}}                              - {{{PS.SRS.ClientTable.2.Name}}}{{/PS.SRS.ClientTable.2.Name}}\n{{#PS.SRS.ClientTable.3.Name}}                              - {{{PS.SRS.ClientTable.3.Name}}}{{/PS.SRS.ClientTable.3.Name}}\n{{#PS.SRS.ClientTable.4.Name}}                              - {{{PS.SRS.ClientTable.4.Name}}}{{/PS.SRS.ClientTable.4.Name}}{{/PS.SRS.ClientsPresent}}\n\n{{#PS.Updating}}\n               -=:# Server Update Status #:=-\n              \n              LotATC Updater : {{#message.Update.LOT_Upd}}{{message.Update.LOT_Upd}}{{/message.Update.LOT_Upd}}{{#PS.LOT_Updater.Offline}} [{{PS.DCS.Lot_Version}}]{{/PS.LOT_Updater.Offline}}{{#PS.LOT_Updater.IsActive}}\n                       Ticks : {{PS.LOT_Updater.RunTime.Ticks}}\n            Process CPU Load : {{PS.LOT_Updater.CPULoad}} %\n         Process Memory Load : {{PS.LOT_Updater.MemGB}} GB\n             Process Threads : {{PS.LOT_Updater.Threads}}\n             Process Handles : {{PS.LOT_Updater.Threads}}{{/PS.LOT_Updater.IsActive}}\n             \n\t\t\t\t SRS Updater : {{#message.Update.SRS_Upd}}{{message.Update.SRS_Upd}}{{/message.Update.SRS_Upd}}{{#PS.SRS_Updater.Offline}} [{{PS.SRS.Version}}]{{/PS.SRS_Updater.Offline}}{{#PS.SRS_Updater.IsActive}}\n                       Ticks : {{PS.SRS_Updater.RunTime.Ticks}}\n            Process CPU Load : {{PS.SRS_Updater.CPULoad}} %\n         Process Memory Load : {{PS.SRS_Updater.MemGB}} GB\n             Process Threads : {{PS.SRS_Updater.Threads}}\n             Process Handles : {{PS.SRS_Updater.Threads}}{{/PS.SRS_Updater.IsActive}}\n             \n                 DCS Updater : {{#message.Update.DCS_Upd}}{{message.Update.DCS_Upd}}{{/message.Update.DCS_Upd}}{{#PS.DCS_Updater.Offline}} [{{PS.DCS.Version}}]{{/PS.DCS_Updater.Offline}}{{#PS.DCS_Updater.IsActive}}\n                       Ticks : {{PS.DCS_Updater.RunTime.Ticks}}\n            Process CPU Load : {{PS.DCS_Updater.CPULoad}} %\n         Process Memory Load : {{PS.DCS_Updater.MemGB}} GB\n             Process Threads : {{PS.DCS_Updater.Threads}}\n             Process Handles : {{PS.DCS_Updater.Threads}}{{/PS.DCS_Updater.IsActive}}\n{{/PS.Updating}}\n```\nRequest completed in {{message.TTC}}",
         "output": "str",
-        "x": 1235,
+        "x": 1355,
         "y": 160,
         "wires": [
             [
@@ -1500,8 +1394,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 421,
-        "y": 340,
+        "x": 396,
+        "y": 360,
         "wires": [
             [
                 "56246863.7e6688"
@@ -1589,7 +1483,7 @@
         "type": "function",
         "z": "706974d2.aeef8c",
         "name": "Config Pre-Processing......",
-        "func": "var MsgSent = context.get('MsgSent') || 1;\nvar DDC2 = flow.get('DDC2');\nvar Func = flow.get('Func');\nmsg.message.Notification = \"\" //Stops the Notification system from sending out a message.\nmsg.message.comment = \"Cached Response\"\nvar msglow = msg.message.raw.toLowerCase();\nvar splitmsg = msglow.split(\" \",3);\nvar Config = splitmsg[2];\nvar DCS_Config = false\nvar SRS_Config = false\nvar LOT_Config = false\nvar TAC_Config = false\nvar DDC2_Config = false\n\nif (Config == \"dcs\") {DCS_Config = true}\nif (Config == \"srs\") {SRS_Config = true}\nif (Config == \"lot\") {LOT_Config = true}\nif (Config == \"tac\") {TAC_Config = true}\nif (Config == \"ddc2\") {DDC2_Config = true}\nif (typeof Config == 'undefined') {DDC2_Config = true}\n\nmsg.message.AdminONLY = {\n        \"AdminChannel\" : false,\n          \"DCS_Config\" : DCS_Config,\n          \"SRS_Config\" : SRS_Config,\n          \"LOT_Config\" : LOT_Config,\n          \"TAC_Config\" : TAC_Config,\n         \"DDC2_Config\" : DDC2_Config,\n       \"App_Installed\" : true\n    }\nmsg.message.Notification = \"\"\n\nvar adminMSG = RED.util.cloneMessage(msg)\nadminMSG.message.AdminONLY.AdminChannel = true\n\nif(msg.channel.id == DDC2.Channel.Admin) {\n    msg.message.Notification = \"\"\n    if ((DDC2.AppConfig.DCS.Installed != true) && (msg.message.AdminONLY.DCS_Config == true)) {\n        msg.message.Notification = DDC2.ServerInfo.ServerID+` regrets to inform you that SRS does not appear to be installed on this server so no config can be displayed.`\n        msg.message.AdminONLY.App_Installed = false\n        adminMSG.message.AdminONLY.App_Installed = false;\n    }    \n    if ((DDC2.AppConfig.SRS.Installed != true) && (msg.message.AdminONLY.SRS_Config == true)) {\n        msg.message.Notification = DDC2.ServerInfo.ServerID+` regrets to inform you that SRS does not appear to be installed on this server so no config can be displayed.`\n        msg.message.AdminONLY.App_Installed = false\n        adminMSG.message.AdminONLY.App_Installed = false\n    }\n    if ((DDC2.AppConfig.LotATC.Installed != true) && (msg.message.AdminONLY.LOT_Config == true)) {\n        msg.message.Notification = DDC2.ServerInfo.ServerID+` regrets to inform you that LotATC does not appear to be installed on this server so no config can be displayed`\n        msg.message.AdminONLY.App_Installed = false\n        adminMSG.message.AdminONLY.App_Installed = false\n    }\n    if ((DDC2.AppConfig.Tacview.Installed != true) && (msg.message.AdminONLY.TAC_Config == true)) {\n        msg.message.Notification = DDC2.ServerInfo.ServerID+` regrets to inform you that TacView does not appear to be installed on this server so no config can be displayed`\n        msg.message.AdminONLY.App_Installed = false\n        adminMSG.message.AdminONLY.App_Installed = false\n    }\n} else {\n    msg.message.Notification = DDC2.ServerInfo.ServerID+` acknowledges your `+(Func.Capitalize(msg.message.requesttype))+` command, due to the sensitive nature of the information the reply contains, DDC2 will post the information to your administration channel instead.`\n    adminMSG.channel.id = DDC2.Channel.Admin\n        if ((DDC2.AppConfig.DCS.Installed != true) && (msg.message.AdminONLY.DCS_Config == true)) {\n        msg.message.Notification = DDC2.ServerInfo.ServerID+` regrets to inform you that SRS does not appear to be installed on this server so no config can be displayed.`\n        msg.message.AdminONLY.App_Installed = false\n        adminMSG.message.AdminONLY.App_Installed = false;\n    }    \n    if ((DDC2.AppConfig.SRS.Installed != true) && (msg.message.AdminONLY.SRS_Config == true)) {\n        msg.message.Notification = DDC2.ServerInfo.ServerID+` regrets to inform you that SRS does not appear to be installed on this server so no config can be displayed.`\n        msg.message.AdminONLY.App_Installed = false\n        adminMSG.message.AdminONLY.App_Installed = false\n    }\n    if ((DDC2.AppConfig.LotATC.Installed != true) && (msg.message.AdminONLY.LOT_Config == true)) {\n        msg.message.Notification = DDC2.ServerInfo.ServerID+` regrets to inform you that LotATC does not appear to be installed on this server so no config can be displayed`\n        msg.message.AdminONLY.App_Installed = false\n        adminMSG.message.AdminONLY.App_Installed = false\n    }\n    if ((DDC2.AppConfig.Tacview.Installed != true) && (msg.message.AdminONLY.TAC_Config == true)) {\n        msg.message.Notification = DDC2.ServerInfo.ServerID+` regrets to inform you that TacView does not appear to be installed on this server so no config can be displayed`\n        msg.message.AdminONLY.App_Installed = false\n        adminMSG.message.AdminONLY.App_Installed = false\n    }\n}\nnode.status({fill:\"green\",shape:\"ring\",text: \"Passwords misplaced: \"+MsgSent});\ncontext.set('MsgSent', (MsgSent + 1));\nreturn [adminMSG,msg];",
+        "func": "var MsgSent = context.get('MsgSent') || 1;\nvar DDC2 = flow.get('DDC2');\nvar Func = flow.get('Func');\nmsg.message.Notification = \"\" //Stops the Notification system from sending out a message.\nmsg.message.comment = \"Cached Response\"\nvar msglow = msg.message.raw.toLowerCase();\nvar splitmsg = msglow.split(\" \",3);\nvar Config = splitmsg[2];\nvar DCS_Config = false\nvar SRS_Config = false\nvar LOT_Config = false\nvar TAC_Config = false\nvar DDC2_Config = false\n\nif (Config == \"-dcs\") {DCS_Config = true}\nif (Config == \"-srs\") {SRS_Config = true}\nif (Config == \"-lot\") {LOT_Config = true}\nif (Config == \"-tac\") {TAC_Config = true}\nif (Config == \"-ddc2\") {DDC2_Config = true}\nif (typeof Config == 'undefined') {DDC2_Config = true}\n\nmsg.message.AdminONLY = {\n        \"AdminChannel\" : false,\n          \"DCS_Config\" : DCS_Config,\n          \"SRS_Config\" : SRS_Config,\n          \"LOT_Config\" : LOT_Config,\n          \"TAC_Config\" : TAC_Config,\n         \"DDC2_Config\" : DDC2_Config,\n       \"App_Installed\" : true\n    }\nmsg.message.Notification = \"\"\n\nvar adminMSG = RED.util.cloneMessage(msg)\nadminMSG.message.AdminONLY.AdminChannel = true\n\nif(msg.channel.id == DDC2.Channel.Admin) {\n    msg.message.Notification = \"\"\n    if ((DDC2.AppConfig.DCS.Installed != true) && (msg.message.AdminONLY.DCS_Config == true)) {\n        msg.message.Notification = DDC2.ServerInfo.ServerID+` regrets to inform you that SRS does not appear to be installed on this server so no config can be displayed.`\n        msg.message.AdminONLY.App_Installed = false\n        adminMSG.message.AdminONLY.App_Installed = false;\n    }    \n    if ((DDC2.AppConfig.SRS.Installed != true) && (msg.message.AdminONLY.SRS_Config == true)) {\n        msg.message.Notification = DDC2.ServerInfo.ServerID+` regrets to inform you that SRS does not appear to be installed on this server so no config can be displayed.`\n        msg.message.AdminONLY.App_Installed = false\n        adminMSG.message.AdminONLY.App_Installed = false\n    }\n    if ((DDC2.AppConfig.LotATC.Installed != true) && (msg.message.AdminONLY.LOT_Config == true)) {\n        msg.message.Notification = DDC2.ServerInfo.ServerID+` regrets to inform you that LotATC does not appear to be installed on this server so no config can be displayed`\n        msg.message.AdminONLY.App_Installed = false\n        adminMSG.message.AdminONLY.App_Installed = false\n    }\n    if ((DDC2.AppConfig.Tacview.Installed != true) && (msg.message.AdminONLY.TAC_Config == true)) {\n        msg.message.Notification = DDC2.ServerInfo.ServerID+` regrets to inform you that TacView does not appear to be installed on this server so no config can be displayed`\n        msg.message.AdminONLY.App_Installed = false\n        adminMSG.message.AdminONLY.App_Installed = false\n    }\n} else {\n    msg.message.Notification = DDC2.ServerInfo.ServerID+` acknowledges your `+(Func.Capitalize(msg.message.requesttype))+` command, due to the sensitive nature of the information the reply contains, DDC2 will post the information to your administration channel instead.`\n    adminMSG.channel.id = DDC2.Channel.Admin\n        if ((DDC2.AppConfig.DCS.Installed != true) && (msg.message.AdminONLY.DCS_Config == true)) {\n        msg.message.Notification = DDC2.ServerInfo.ServerID+` regrets to inform you that SRS does not appear to be installed on this server so no config can be displayed.`\n        msg.message.AdminONLY.App_Installed = false\n        adminMSG.message.AdminONLY.App_Installed = false;\n    }    \n    if ((DDC2.AppConfig.SRS.Installed != true) && (msg.message.AdminONLY.SRS_Config == true)) {\n        msg.message.Notification = DDC2.ServerInfo.ServerID+` regrets to inform you that SRS does not appear to be installed on this server so no config can be displayed.`\n        msg.message.AdminONLY.App_Installed = false\n        adminMSG.message.AdminONLY.App_Installed = false\n    }\n    if ((DDC2.AppConfig.LotATC.Installed != true) && (msg.message.AdminONLY.LOT_Config == true)) {\n        msg.message.Notification = DDC2.ServerInfo.ServerID+` regrets to inform you that LotATC does not appear to be installed on this server so no config can be displayed`\n        msg.message.AdminONLY.App_Installed = false\n        adminMSG.message.AdminONLY.App_Installed = false\n    }\n    if ((DDC2.AppConfig.Tacview.Installed != true) && (msg.message.AdminONLY.TAC_Config == true)) {\n        msg.message.Notification = DDC2.ServerInfo.ServerID+` regrets to inform you that TacView does not appear to be installed on this server so no config can be displayed`\n        msg.message.AdminONLY.App_Installed = false\n        adminMSG.message.AdminONLY.App_Installed = false\n    }\n}\nnode.status({fill:\"green\",shape:\"ring\",text: \"Passwords misplaced: \"+MsgSent});\ncontext.set('MsgSent', (MsgSent + 1));\nreturn [adminMSG,msg];",
         "outputs": 2,
         "noerr": 0,
         "initialize": "",
@@ -1650,8 +1544,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 421,
-        "y": 400,
+        "x": 396,
+        "y": 420,
         "wires": [
             [
                 "56246863.7e6688"
@@ -1678,54 +1572,6 @@
             ]
         ],
         "l": false
-    },
-    {
-        "id": "b5d09289.130fe",
-        "type": "inject",
-        "z": "706974d2.aeef8c",
-        "name": "Change Stuff",
-        "props": [
-            {
-                "p": "payload"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": "0.1",
-        "topic": "",
-        "payload": "true",
-        "payloadType": "bool",
-        "x": 430,
-        "y": 1600,
-        "wires": [
-            [
-                "6fe16fa7.e2d2a"
-            ]
-        ]
-    },
-    {
-        "id": "6fe16fa7.e2d2a",
-        "type": "function",
-        "z": "706974d2.aeef8c",
-        "name": "TEST",
-        "func": "var DDC2 = flow.get('DDC2');\nvar Func = flow.get('Func');\n\nflow.set('DDC2.AppConfig.DCS.Installed', false)\nflow.set('DDC2.AppConfig.SRS.Installed', false)\nflow.set('DDC2.AppConfig.LotATC.Installed', false)\nflow.set('DDC2.AppConfig.Tacview.Installed', false)",
-        "outputs": 1,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "x": 610,
-        "y": 1600,
-        "wires": [
-            []
-        ],
-        "inputLabels": [
-            "CnC-CORE"
-        ],
-        "outputLabels": [
-            "Server-Status"
-        ],
-        "icon": "node-red/envelope.svg"
     },
     {
         "id": "3bf77953.d8a626",
@@ -1787,23 +1633,26 @@
         "type": "function",
         "z": "706974d2.aeef8c",
         "name": "Update Pre-Processing",
-        "func": "////Initialize Variables\nvar Func = flow.get('Func');\nvar DDC2 = flow.get('DDC2');\n////////////////////////////////////////////////////////////////////////////////////////////////////\nmsg.message.valid = true;\nmsg.message.Notification = DDC2.ServerInfo.ServerID+ ` has received your request `+msg.author.username+ ` and has begun processing your `+(Func.Capitalize(msg.message.requesttype))+` request, please wait....`\nmsg.payload = msg.message.request.replace('!','-')\n////////////////////////////////////////////////////////////////////////////////////////////////////\nvar MsgSent = context.get('MsgSent') || 1;\ncontext.set('MsgSent', (MsgSent + 1));\nreturn msg",
-        "outputs": 1,
+        "func": "////Initialize Variables\nvar Func = flow.get('Func');\nvar DDC2 = flow.get('DDC2');\n////////////////////////////////////////////////////////////////////////////////////////////////////\nmsg.message.valid = true;\nmsg.message.Notification = DDC2.ServerInfo.ServerID+ ` has received your request `+msg.author.username+ ` and has begun processing your `+(Func.Capitalize(msg.message.requesttype))+` request, to check the status of the update command run the !status command....`\nmsg.payload = msg.message.request.replace('!','-')\n////////////////////////////////////////////////////////////////////////////////////////////////////\nvar MsgSent = context.get('MsgSent') || 1;\ncontext.set('MsgSent', (MsgSent + 1));\nreturn msg",
+        "outputs": 2,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
-        "x": 956,
+        "x": 970,
         "y": 600,
         "wires": [
             [
-                "b7ef7da7.fc86f"
-            ]
+                "b7ef7da7.fc86f",
+                "104865d4.43020a"
+            ],
+            []
         ],
         "inputLabels": [
             "Post-Whitelist-Check"
         ],
         "outputLabels": [
-            "To Powershell"
+            "To Powershell",
+            null
         ],
         "icon": "node-red/inject.svg"
     },
@@ -1818,7 +1667,7 @@
         "initialize": "",
         "finalize": "",
         "x": 970,
-        "y": 540,
+        "y": 480,
         "wires": [
             [
                 "104865d4.43020a",
@@ -1843,8 +1692,8 @@
         "noerr": 0,
         "initialize": "",
         "finalize": "",
-        "x": 356,
-        "y": 1040,
+        "x": 330,
+        "y": 980,
         "wires": [
             [
                 "f7686d61.dda76"
@@ -1914,7 +1763,7 @@
             "d52ab787.470dd8",
             "dcd8bae1.a6a4f8"
         ],
-        "x": 1395,
+        "x": 1455,
         "y": 160,
         "wires": []
     },
@@ -1932,8 +1781,7 @@
         "y": 80,
         "wires": [
             [
-                "11ef3fe.fcf79c",
-                "58b8a435.c2c69c"
+                "11ef3fe.fcf79c"
             ]
         ],
         "inputLabels": [
@@ -1945,28 +1793,11 @@
         "icon": "node-red/inject.svg"
     },
     {
-        "id": "58b8a435.c2c69c",
-        "type": "debug",
-        "z": "706974d2.aeef8c",
-        "name": "DEBUG MESSAGE",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1350,
-        "y": 60,
-        "wires": []
-    },
-    {
         "id": "cd39221a.41d13",
         "type": "function",
         "z": "706974d2.aeef8c",
         "name": "Update Post-Processing",
-        "func": "//TEMP PLACE HOLDER\n//TEMP PLACE HOLDER\n//TEMP PLACE HOLDER\n//TEMP PLACE HOLDER\n//TEMP PLACE HOLDER\n\n////Initialize Variables\nvar Func = flow.get('Func');\nvar DDC2 = flow.get('DDC2');\n\n////////////////////////////////////////////////////////////////////////////////////////////////////\nvar ttc = Func.DaysBetween((new Date(msg.data.createdTimestamp)), new Date());\nmsg.message.TTC = ttc\nmsg.message.comment = \"Request Actioned\"\n\n\nif (typeof msg.message.Update === 'undefined') {\n    //First Run\n    msg.delay = (DDC2.ServerInfo.UpdateLoop * 1000)\n    msg.message.Update = {\n            \"Status\" : \"Initializing\",\n          \"FirstRun\" : true,\n          \"Finished\" : false\n    }\n} else {\n    if(msg.PS.Updating) {\n        msg.message.Update.Status = \"Updating\"\n        msg.message.Update.FirstRun = false\n        msg.message.Update.Finished = false\n    } else {\n        msg.message.Update.Status = \"Done\"\n        msg.message.Update.FirstRun = false\n        msg.message.Update.Finished = true\n    }\n}\nif(msg.PS.DCS.IsActive) {msg.message.Update.Finished = true}\nif(msg.PS.SRS.IsActive) {msg.message.Update.Finished = true}\n\nmsg.message.payload = `-Status`\nmsg.payload = msg.message.payload;\nif(msg.message.Update.Finished) {return [msg,null]} else {return [msg,msg]}\n\n\n\n//msg.message.Notification = DDC2.ServerInfo.ServerID+ ` has `+(Func.Capitalize(msg.message.requesttype))+extraP+`ed the the server. The task took `+msg.message.TTC+` to complete.`\n////////////////////////////////////////////////////////////////////////////////////////////////////\n",
+        "func": "//TEMP PLACE HOLDER\n//TEMP PLACE HOLDER\n//TEMP PLACE HOLDER\n//TEMP PLACE HOLDER\n//TEMP PLACE HOLDER\n\n////Initialize Variables\nvar Func = flow.get('Func');\nvar DDC2 = flow.get('DDC2');\n\n////////////////////////////////////////////////////////////////////////////////////////////////////\nvar ttc = Func.DaysBetween((new Date(msg.data.createdTimestamp)), new Date());\nmsg.message.TTC = ttc\nmsg.message.comment = \"Request Actioned\"\n\n\nif (typeof msg.message.Update === 'undefined') {\n    //First Run\n    msg.delay = (DDC2.ServerInfo.UpdateLoop * 1000)\n    msg.message.Update = {\n            \"Status\" : \"Initializing\",\n          \"FirstRun\" : true,\n           \"LOT_Upd\" : \"Update not started\",\n           \"SRS_Upd\" : \"Update not started\",\n           \"DCS_Upd\" : \"Update not started\",\n          \"Finished\" : false\n    }\n} else {\n    if(msg.PS.Updating) {\n        msg.message.Update.Status = \"Updating\"\n        msg.message.Update.FirstRun = false\n        msg.message.Update.Finished = false\n    } else {\n        msg.message.Update.Status = \"Done\"\n        msg.message.Update.FirstRun = false\n        msg.message.Update.Finished = true\n    }\n}\nif(msg.PS.DCS.IsActive) {msg.message.Update.Finished = true}\nif(msg.PS.SRS.IsActive) {msg.message.Update.Finished = true}\n\nif(msg.PS.LOT_Updater.IsActive) {\n    msg.message.Update.LOT_Upd = \"Updating to current \"+DDC2.ServerInfo.LotBuild+\" Build\"\n}\nif(msg.PS.SRS_Updater.IsActive) {\n    msg.message.Update.LOT_Upd = \"Update Complete (\"+DDC2.ServerInfo.LotBuild+\")\"\n    msg.message.Update.SRS_Upd = \"Updating to current \"+DDC2.ServerInfo.SRSBuild+\" Build\"\n}\nif(msg.PS.DCS_Updater.IsActive) {\n    msg.message.Update.LOT_Upd = \"Update Complete (\"+DDC2.ServerInfo.LotBuild+\")\"\n    msg.message.Update.SRS_Upd = \"Update Complete (\"+DDC2.ServerInfo.SRSBuild+\")\"\n    msg.message.Update.DCS_Upd = \"Updating to current \"+DDC2.ServerInfo.DCSBuild+\" Build\"\n}\nif(msg.message.Update.DCS_Upd == \"Updating\") {\n    if (msg.PS.DCS_Updater.Offline) {\n        msg.message.Update.DCS_Upd = \"Update Complete (\"+DDC2.ServerInfo.DCSBuild+\")\"\n    }\n}\nif(DDC2.AppConfig.DCS.Version != msg.PS.DCS.Version) {\n    flow.set('DDC2.AppConfig.DCS.Version', msg.PS.DCS.Lot_Version)\n}\nif(DDC2.AppConfig.LotATC.Version != msg.PS.DCS.Lot_Version) {\n    flow.set('DDC2.AppConfig.LotATC.Version', msg.PS.DCS.Lot_Version)\n}\nif(DDC2.AppConfig.SRS.Version != msg.PS.SRS.Version) {\n    flow.set('DDC2.AppConfig.SRS.Version', msg.PS.SRS.Version)\n}\nmsg.message.payload = `-Status`\nmsg.payload = msg.message.payload;\n\n//If you want interval reporting on Update status uncomment the line below.\n//if(msg.message.Update.Finished) {return [msg,null]} else {return [msg,msg]}\n////////////////////////////////////////////////////////////////////////////////////////////////////\n",
         "outputs": 2,
         "noerr": 0,
         "initialize": "",
@@ -1975,8 +1806,7 @@
         "y": 200,
         "wires": [
             [
-                "58b8a435.c2c69c",
-                "c742702e.8cb9f"
+                "97c8ac4b.11c83"
             ],
             [
                 "d79640b.c7a31c"
@@ -2026,54 +1856,11 @@
         "z": "706974d2.aeef8c",
         "name": "NOTIFICATION ONLY",
         "links": [],
-        "x": 201,
-        "y": 340,
+        "x": 176,
+        "y": 360,
         "wires": [
             [
                 "1b78a82b.e34c58"
-            ]
-        ]
-    },
-    {
-        "id": "1977bd76.92bb43",
-        "type": "function",
-        "z": "706974d2.aeef8c",
-        "name": "",
-        "func": "/*\n\n\nfunction ValidateIPv4address(IPv4Addr) {\n var ipformat = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;\n if(IPv4Addr.match(ipformat)) {return true} else {return false}\n }\n\nfunction ValidateIPv6address(IPv6Addr) {\n var ipformat = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;\n if(IPAddr.match(ipformat)) {return true} else {return false}\n }\n\n\n\nfunction ValidateIPaddress(IPAddr)\n{\n    return /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\\-]*[A-Za-z0-9])$|^\\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:)))(%.+)?\\s*$/.test(IPAddr);\n}\n\nmsg.payload = ValidateIPaddress(\"\")\n//msg.payload = ValidateIPaddress(\"fe80::217:f2ff:fe07:ed62QQ\")\n*/\nmsg.delay = 60\n\nreturn msg;",
-        "outputs": 1,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "x": 400,
-        "y": 1480,
-        "wires": [
-            [
-                "986d403.37697c"
-            ]
-        ]
-    },
-    {
-        "id": "512f0b23.7b20b4",
-        "type": "inject",
-        "z": "706974d2.aeef8c",
-        "name": "",
-        "props": [
-            {
-                "p": "payload"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "payload": "true",
-        "payloadType": "bool",
-        "x": 240,
-        "y": 1480,
-        "wires": [
-            [
-                "1977bd76.92bb43"
             ]
         ]
     },
@@ -2108,27 +1895,9 @@
         "links": [
             "1ba74911.0102c7"
         ],
-        "x": 1395,
+        "x": 1455,
         "y": 320,
         "wires": []
-    },
-    {
-        "id": "ca7ddb2b.5e41c8",
-        "type": "debug",
-        "z": "706974d2.aeef8c",
-        "name": "TO DO LIST",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1470,
-        "y": 480,
-        "wires": [],
-        "info": "1.  Access errors & loop DONE\n2.  Status Return DONE\n3.  Update Return & loop (Going to use  Status)\n4.  add update timer variable to flow.ddc2 DONE\n5.  add access timer variable to flow.ddc2 DONE\n6.  Random Password variable and password PS randomizer code DONE\n7.  Build in logic to disallow start / restart commands when DCS Update is running and vice versa\n8.  Fix SRS Syntax DONE"
     },
     {
         "id": "4f80ea3a.7b6ff4",
@@ -2158,7 +1927,7 @@
         "links": [
             "d52ab787.470dd8"
         ],
-        "x": 1395,
+        "x": 1455,
         "y": 280,
         "wires": []
     },
@@ -2170,7 +1939,7 @@
         "links": [
             "a585c1fc.c031c"
         ],
-        "x": 1395,
+        "x": 1455,
         "y": 240,
         "wires": []
     },
@@ -2179,7 +1948,7 @@
         "type": "function",
         "z": "706974d2.aeef8c",
         "name": "Stop .............................",
-        "func": "////Initialize Variables\nvar Func = flow.get('Func');\nvar DDC2 = flow.get('DDC2');\n////////////////////////////////////////////////////////////////////////////////////////////////////\nvar ttc = Func.DaysBetween((new Date(msg.data.createdTimestamp)), new Date());\nmsg.message.TTC = ttc\nmsg.message.comment = \"Request Actioned\"\nvar extraP = 'p'\nif(msg.message.requesttype != 'stop') {extraP = ''}\n\nmsg.message.Notification = DDC2.ServerInfo.ServerID+ ` has `+(Func.Capitalize(msg.message.requesttype))+extraP+`ed the server. The task took `+msg.message.TTC+` to complete.`\n////////////////////////////////////////////////////////////////////////////////////////////////////\nreturn msg",
+        "func": "////Initialize Variables\nvar Func = flow.get('Func');\nvar DDC2 = flow.get('DDC2');\n////////////////////////////////////////////////////////////////////////////////////////////////////\nvar ttc = Func.DaysBetween((new Date(msg.data.createdTimestamp)), new Date());\nmsg.message.TTC = ttc\nmsg.message.comment = \"Request Actioned\"\nvar extraP = 'p'\nif(msg.message.requesttype != 'stop') {extraP = ''}\n\nmsg.message.Notification = \"This message should never be seen and if it is seen it means someone has broken the stop command logic, bummer...\"\n\nif(msg.message.Stop.Game) {\n    msg.message.Notification = DDC2.ServerInfo.ServerID+ ` has `+(Func.Capitalize(msg.message.requesttype))+extraP+`ed the DCS and SRS server processes. The task took `+msg.message.TTC+` to complete.`\n}\nif(msg.message.Stop.All) {\n    msg.message.Notification = DDC2.ServerInfo.ServerID+ ` has `+(Func.Capitalize(msg.message.requesttype))+extraP+`ed all Game and Update server processes. The task took `+msg.message.TTC+` to complete.`\n}\nif(msg.message.Stop.DCS) {\n    msg.message.Notification = DDC2.ServerInfo.ServerID+ ` has `+(Func.Capitalize(msg.message.requesttype))+extraP+`ed the DCS server process. The task took `+msg.message.TTC+` to complete.`\n}\nif(msg.message.Stop.SRS) {\n    msg.message.Notification = DDC2.ServerInfo.ServerID+ ` has `+(Func.Capitalize(msg.message.requesttype))+extraP+`ed the SRS server process. The task took `+msg.message.TTC+` to complete.`\n}\nif(msg.message.Stop.Update) {\n    msg.message.Notification = DDC2.ServerInfo.ServerID+ ` has `+(Func.Capitalize(msg.message.requesttype))+extraP+`ed the servers DCS, LotATC and SRS update processes. The task took `+msg.message.TTC+` to complete.`\n}\n////////////////////////////////////////////////////////////////////////////////////////////////////\nreturn msg",
         "outputs": 1,
         "noerr": 0,
         "initialize": "",
@@ -2207,8 +1976,8 @@
         "links": [
             "b7ef8295.ce0e2"
         ],
-        "x": 355,
-        "y": 220,
+        "x": 515,
+        "y": 160,
         "wires": []
     },
     {
@@ -2219,37 +1988,13 @@
         "links": [
             "73a35b78.ac4d74"
         ],
-        "x": 375,
-        "y": 640,
+        "x": 275,
+        "y": 600,
         "wires": [
             [
-                "f7baec7c.2268"
+                "5e414adf.881b14"
             ]
         ]
-    },
-    {
-        "id": "f7baec7c.2268",
-        "type": "delay",
-        "z": "706974d2.aeef8c",
-        "name": "",
-        "pauseType": "delayv",
-        "timeout": "2",
-        "timeoutUnits": "seconds",
-        "rate": "1",
-        "nbRateUnits": "1",
-        "rateUnits": "second",
-        "randomFirst": "1",
-        "randomLast": "5",
-        "randomUnits": "seconds",
-        "drop": false,
-        "x": 455,
-        "y": 640,
-        "wires": [
-            [
-                "269c53d2.7f5dcc"
-            ]
-        ],
-        "l": false
     },
     {
         "id": "a88d9103.dab59",
@@ -2262,5 +2007,111 @@
         "x": 1235,
         "y": 400,
         "wires": []
+    },
+    {
+        "id": "97c8ac4b.11c83",
+        "type": "template",
+        "z": "706974d2.aeef8c",
+        "name": "Update Status Formatting",
+        "field": "payload",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "```\n               -=:# Server Update Status #:=-\n              DDC2 Server ID : {{{flow.DDC2.ServerInfo.ServerID}}}\n      Update Processing Time : {{message.TTC}}\n      Update Message Inteval : {{{flow.DDC2.ServerInfo.UpdateLoop}}} seconds\n      \n              LotATC Updater : {{#message.Update.LOT_Upd}}{{message.Update.LOT_Upd}}{{/message.Update.LOT_Upd}}{{#PS.LOT_Updater.Offline}} [{{PS.DCS.Lot_Version}}]{{/PS.LOT_Updater.Offline}}{{#PS.LOT_Updater.IsActive}}\n                       Ticks : {{PS.LOT_Updater.RunTime.Ticks}}\n            Process CPU Load : {{PS.LOT_Updater.CPULoad}} %\n         Process Memory Load : {{PS.LOT_Updater.MemGB}} GB\n             Process Threads : {{PS.LOT_Updater.Threads}}\n             Process Handles : {{PS.LOT_Updater.Threads}}{{/PS.LOT_Updater.IsActive}}\n             \n\t\t\t\t SRS Updater : {{#message.Update.SRS_Upd}}{{message.Update.SRS_Upd}}{{/message.Update.SRS_Upd}}{{#PS.SRS_Updater.Offline}} [{{PS.SRS.Version}}]{{/PS.SRS_Updater.Offline}}{{#PS.SRS_Updater.IsActive}}\n                       Ticks : {{PS.SRS_Updater.RunTime.Ticks}}\n            Process CPU Load : {{PS.SRS_Updater.CPULoad}} %\n         Process Memory Load : {{PS.SRS_Updater.MemGB}} GB\n             Process Threads : {{PS.SRS_Updater.Threads}}\n             Process Handles : {{PS.SRS_Updater.Threads}}{{/PS.SRS_Updater.IsActive}}\n             \n                 DCS Updater : {{#message.Update.DCS_Upd}}{{message.Update.DCS_Upd}}{{/message.Update.DCS_Upd}}{{#PS.DCS_Updater.Offline}} [{{PS.DCS.Version}}]{{/PS.DCS_Updater.Offline}}{{#PS.DCS_Updater.IsActive}}\n                       Ticks : {{PS.DCS_Updater.RunTime.Ticks}}\n            Process CPU Load : {{PS.DCS_Updater.CPULoad}} %\n         Process Memory Load : {{PS.DCS_Updater.MemGB}} GB\n             Process Threads : {{PS.DCS_Updater.Threads}}\n             Process Handles : {{PS.DCS_Updater.Threads}}{{/PS.DCS_Updater.IsActive}}\n```\n{{#PS.Updating}}\n{{/PS.Updating}}",
+        "output": "str",
+        "x": 1355,
+        "y": 200,
+        "wires": [
+            [
+                "4d5772e9.365a3c"
+            ]
+        ],
+        "l": false
+    },
+    {
+        "id": "f3c0a2b5.2a5f4",
+        "type": "link out",
+        "z": "706974d2.aeef8c",
+        "name": "To LOG",
+        "links": [
+            "a585c1fc.c031c"
+        ],
+        "x": 1235,
+        "y": 440,
+        "wires": []
+    },
+    {
+        "id": "5e414adf.881b14",
+        "type": "delay",
+        "z": "706974d2.aeef8c",
+        "name": "",
+        "pauseType": "delayv",
+        "timeout": "10",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "x": 335,
+        "y": 600,
+        "wires": [
+            [
+                "269c53d2.7f5dcc"
+            ]
+        ],
+        "l": false
+    },
+    {
+        "id": "7f47a4ff.8c4cac",
+        "type": "function",
+        "z": "706974d2.aeef8c",
+        "name": "Stop Pre-Processing....",
+        "func": "/*\nStop Command\nusage\n\n!stop <serverID> //DEFAULT ACTION: Stops DCS and SRS processes (Same as -Game)\n\n!stop <serverID> -All  //Stops All DCS and Update processes\n\n!stop <serverID> -Game //Stops DCS and SRS processes\n\n!stop <serverID> -DCS //Stops DCS process\n\n!stop <serverID> -SRS //Stops SRS process\n\n!stop <serverID> -Update //Stops Update process\n\nOptions for Default are \n\n-StopAll\n-StopGame\n-StopDCS\n-StopSRS\n-StopUpdate\n\n*/\n////Initialize Variables\nvar Func = flow.get('Func');\nvar DDC2 = flow.get('DDC2');\n////////////////////////////////////////////////////////////////////////////////////////////////////\nvar MsgSent = context.get('MsgSent') || 1;\nnode.status({fill:\"green\",shape:\"ring\",text: \"Airbrakes Deployed : \"+MsgSent});\ncontext.set('MsgSent', (MsgSent + 1));\n////////////////////////////////////////////////////////////////////////////////////////////////////\nmsg.message.Stop = {\n         \"Game\" : false,\n          \"All\" : false,\n          \"DCS\" : false,\n          \"SRS\" : false,\n       \"Update\" : false\n    }\n////////////////////////////////////////////////////////////////////////////////////////////////////\nmsg.message.valid = true;\nvar msglow = msg.message.raw.toLowerCase();\n////////////////////////////////////////////////////////////////////////////////////////////////////\n//DEFAULT ACTION (will be executed is no other switches are detected during message analysis)\nvar DefaultNote = msg.message.Notification = DDC2.ServerInfo.ServerID+ ` has recieved a `+(Func.Capitalize(msg.message.requesttype))+ ` command request from `+msg.author.username+ `. Please wait while this task is processed....`\nvar DefaultPayload = msg.payload = msg.message.request.replace('!','-')+\" -StopGame\" //DEFAULT SETTING IS -StopGame\n////////////////////////////////////////////////////////////////////////////////////////////////////\n\nvar StopAll = msglow.indexOf('-all')\nvar doStopAll = \"\"\nif(StopAll != -1) {\n    doStopAll = \"-StopAll\"\n    msg.message.Stop.All = true\n    msg.message.Notification = DDC2.ServerInfo.ServerID+ ` has recieved a `+(Func.Capitalize(msg.message.requesttype))+ ` -all command request from `+msg.author.username+ `. Please wait while this task is processed....`\n    msg.payload = msg.message.request.replace('!','-')+\" \"+doStopAll\n    return msg\n}\n////////////////////////////////////////////////////////////////////////////////////////////////////\nvar StopGame = msglow.indexOf('-game')\nvar doStopGame = \"\"\nif(StopGame != -1) {\n    doStopGame = \"-StopGame\"\n    msg.message.Stop.Game = true\n    msg.message.Notification = DDC2.ServerInfo.ServerID+ ` has recieved a `+(Func.Capitalize(msg.message.requesttype))+ ` -Game command request from `+msg.author.username+ `. Please wait while this task is processed....`\n    msg.payload = msg.message.request.replace('!','-')+\" \"+doStopGame\n    return msg\n}\n////////////////////////////////////////////////////////////////////////////////////////////////////\nvar StopUpdate = msglow.indexOf('-update')\nvar doStopUpdate = \"\"\nif(StopUpdate != -1) {\n    doStopUpdate = \"-StopUpdate\"\n    msg.message.Stop.Update = true\n    msg.message.Notification = DDC2.ServerInfo.ServerID+ ` has recieved a `+(Func.Capitalize(msg.message.requesttype))+ ` -Update command request from `+msg.author.username+ `. Please wait while this task is processed....`\n    msg.payload = msg.message.request.replace('!','-')+\" \"+doStopUpdate\n    return msg\n}\n////////////////////////////////////////////////////////////////////////////////////////////////////\nvar StopDCS = msglow.indexOf('-dcs')\nvar doStopDCS = \"\"\nif(StopDCS != -1) {\n    doStopDCS = \"-StopDCS\"\n    msg.message.Stop.DCS = true\n    msg.message.Notification = DDC2.ServerInfo.ServerID+ ` has recieved a `+(Func.Capitalize(msg.message.requesttype))+ ` -DCS command request from `+msg.author.username+ `. Please wait while this task is processed....`\n    msg.payload = msg.message.request.replace('!','-')+\" \"+doStopDCS\n    return msg\n}\n////////////////////////////////////////////////////////////////////////////////////////////////////\nvar StopSRS = msglow.indexOf('-srs')\nvar doStopSRS = \"\"\nif(StopSRS != -1) {\n    doStopSRS = \"-StopSRS\"\n    msg.message.Stop.SRS = true\n    msg.message.Notification = DDC2.ServerInfo.ServerID+ ` has recieved a `+(Func.Capitalize(msg.message.requesttype))+ ` -SRS command request from `+msg.author.username+ `. Please wait while this task is processed....`\n    msg.payload = msg.message.request.replace('!','-')+\" \"+doStopSRS\n    return msg\n}\n////////////////////////////////////////////////////////////////////////////////////////////////////\n//Execution of Default Stop Message\nmsg.message.Notification = DefaultNote\nmsg.message.Stop.Game = true\nmsg.payload = DefaultPayload\nreturn msg\n\n\n",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "x": 970,
+        "y": 540,
+        "wires": [
+            [
+                "b7ef7da7.fc86f",
+                "104865d4.43020a"
+            ]
+        ],
+        "inputLabels": [
+            "Post-Whitelist-Check"
+        ],
+        "outputLabels": [
+            "To Powershell"
+        ],
+        "icon": "node-red/inject.svg"
+    },
+    {
+        "id": "8788e9bc.af7e28",
+        "type": "delay",
+        "z": "706974d2.aeef8c",
+        "name": "",
+        "pauseType": "delayv",
+        "timeout": "250",
+        "timeoutUnits": "milliseconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "x": 1235,
+        "y": 240,
+        "wires": [
+            [
+                "c742702e.8cb9f"
+            ]
+        ],
+        "l": false
     }
 ]
