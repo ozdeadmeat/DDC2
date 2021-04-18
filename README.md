@@ -1,5 +1,5 @@
 # DDC2
-## Discord to DCS Command and Control 2.0b Alpha Release##
+## Discord to DCS Command and Control 2.0b Release##
 
 NOTE: This version is now feature complete. 
 
