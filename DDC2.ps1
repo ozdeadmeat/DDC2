@@ -1,19 +1,18 @@
 <#
 DCS Controller Script for Node-Red & Discord Interaction
-# Version 2.0a
+# Version 2.0b
 # Writen by OzDeaDMeaT
-# 10-04-2021
+# 16-04-2021
 ####################################################################################################
 #CHANGE LOG#########################################################################################
 ####################################################################################################
+- Seperated Stop commands to be more Granular
 - Seperation of settings from primary ddc2.ps1 file.
 - Extraction of configuration data from Node-Red workflow to enable easier and less fiddly upgrades of DDC2 moving forward
 - Introduced Radio feature allowing people to send audio messages to SRS frequency via a text message in discord
 - Added dependency to Powershell 7.x (Powershell 5.x is no longer supported)
-- Update not tested as Release and beta versions are the same atm.
 ####################################################################################################
 #>
-
 param(
 [switch]$init,
 [switch]$Refresh,
@@ -22,6 +21,11 @@ param(
 [switch]$Status,
 [switch]$Start,
 [switch]$Stop,
+[switch]$StopAll,
+[switch]$StopGame,
+[switch]$StopDCS,
+[switch]$StopSRS,
+[switch]$StopUpdate,
 [switch]$Restart,
 [switch]$Reboot,
 [switch]$Report,
@@ -58,7 +62,7 @@ $DCSreturn 			= $null
 $DCSreturnJSON 		= $null
 $selection 			= 'Name', 'id', 'ProcessName', 'PriorityClass', 'ProductVersion', 'Responding', 'StartTime', @{Name='Ticks';Expression={$_.TotalProcessorTime.Ticks}}, @{Name='MemGB';Expression={'{00:N2}' -f ($_.WS/1GB)}}
 $ProcessSelection = 'id', 'PriorityClass', 'ProductVersion', 'Responding', 'StartTime', @{Name='Ticks';Expression={$_.TotalProcessorTime.Ticks}}, @{Name='MemGB';Expression={'{00:N2}' -f ($_.WS/1GB)}}, 'MainWindowTitle', 'Path'
-$DDC2_PSCore_Version = "v2.0a"
+$DDC2_PSCore_Version = "v2.0b"
 ####################################################################################################
 ########################################################################################################################################################################################################
 ##This section Sets the DDC2 Location for execution and sets the correct config and log files to write to.
@@ -410,7 +414,6 @@ if(test-path $SRS_AutoConnect) {
 write-log "Setup-Ports: ENDED" -silent
 }
 
-
 ########################################################################################################################################################################################################
 #SERVER & FIREWALL CONTROL##############################################################################################################################################################################
 ########################################################################################################################################################################################################
@@ -615,6 +618,7 @@ Function Set-Window {
     Param (
         [parameter(ValueFromPipelineByPropertyName=$True)]
         $ProcessName,
+		$ProcessID,
         [int]$X,
         [int]$Y,
         [int]$Width,
@@ -647,7 +651,12 @@ Function Set-Window {
     }
     Process {
         $Rectangle = New-Object RECT
-        $Handle = (Get-Process -Name $ProcessName).MainWindowHandle
+		if(-not $ProcessID -eq $null) {
+			$Handle = (Get-Process -Id $ProcessID).MainWindowHandle
+		} else {
+			$Handle = (Get-Process -Name $ProcessName).MainWindowHandle
+		}
+		
         $Return = [Window]::GetWindowRect($Handle,[ref]$Rectangle)
         If (-NOT $PSBoundParameters.ContainsKey('Width')) {            
             $Width = $Rectangle.Right - $Rectangle.Left            
@@ -672,6 +681,7 @@ Function Set-Window {
                 }
                 $Object = [pscustomobject]@{
                     ProcessName = $ProcessName
+					ProcessID = $ProcessID
                     Size = $Size
                     TopLeft = $TopLeft
                     BottomRight = $BottomRight
@@ -842,7 +852,6 @@ if ($Found) {
 	}
 #return $rtn
 }
-
 
 ########################################################################################################################################################################################################
 #SERVER DATA COLLECTION#################################################################################################################################################################################
@@ -1095,6 +1104,12 @@ Function Get-ServerInfo {
 	$Get_ServerInfo | Add-Member -MemberType NoteProperty -Name AccessLoop -Value $ACCESS_LOOP_DELAY		#Item Pulled from ddc2_config.ps1
 	$Get_ServerInfo | Add-Member -MemberType NoteProperty -Name UpdateLoop -Value $UPDATE_LOOP_DELAY		#Item Pulled from ddc2_config.ps1	
 	$Get_ServerInfo | Add-Member -MemberType NoteProperty -Name PwdRandomizer -Value $PwdRandomizer			#Item Pulled from ddc2_config.ps1	
+	$Get_ServerInfo | Add-Member -MemberType NoteProperty -Name LoTBETA -Value $LoTBETA						#Item Pulled from ddc2_config.ps1
+	$Get_ServerInfo | Add-Member -MemberType NoteProperty -Name LotBuild -Value $Lot_Release				#Item Pulled from ddc2_config.ps1
+	$Get_ServerInfo | Add-Member -MemberType NoteProperty -Name SRSBETA -Value $SRSBETA						#Item Pulled from ddc2_config.ps1	
+	$Get_ServerInfo | Add-Member -MemberType NoteProperty -Name SRSBuild -Value $SRS_Release				#Item Pulled from ddc2_config.ps1
+	$Get_ServerInfo | Add-Member -MemberType NoteProperty -Name DCSBETA -Value $DCSBETA						#Item Pulled from ddc2_config.ps1	
+	$Get_ServerInfo | Add-Member -MemberType NoteProperty -Name DCSBuild -Value $DCS_Release				#Item Pulled from ddc2_config.ps1	
 
 return $Get_ServerInfo
 }
@@ -1547,15 +1562,59 @@ $ServerStatus | Add-Member -MemberType NoteProperty -Name LastBootUpTime -Value 
 $ServerStatus | Add-Member -MemberType NoteProperty -Name LastBootUpString -Value (($system.LastBootUpTime).GetDateTimeFormats()[6])
 
 #START DCS
-$DCS = Get-Process -ErrorAction SilentlyContinue | where {$_.MainWindowTitle -eq $DCS_WindowTitle -and $_.Path -eq $dcsEXE} | select $ProcessSelection
+$check = 0
+$contLoop = $true
+while ($contLoop) {
+	#ED Broke the -w command $DCS = Get-Process -ErrorAction SilentlyContinue | where {$_.MainWindowTitle -eq $DCS_WindowTitle -and $_.Path -eq $dcsEXE} | select $ProcessSelection
+	$DCS = Get-Process -ErrorAction SilentlyContinue | where {$_.CommandLine -match "-w $DCS_WindowTitle" -and $_.Path -eq $dcsEXE} | select $ProcessSelection
+	if($DCS.count -gt 0) {
+		if($DCS.Responding) {
+			write-log -LogData "DCS is Responding" -Silent
+			$contLoop = $false
+		} else {
+			$check = $check + 1
+			write-log -LogData "DCS Failed to respond $check / 10 times" -Silent
+		}
+	} else {
+		write-log -LogData "DCS isn't Running" -Silent
+		$contLoop = $false
+	}
+if ($check -ge 10) {
+	write-log -LogData "DCS is going to show as Not Responding" -Silent
+	$contLoop = $false}
+Start-sleep 2;
+}
+if(test-path $dcsEXE) {
+	$DCS_Version = (Get-ChildItem $dcsEXE).VersionInfo.ProductVersion
+	$DCS_INSTALLED = $true
+} else {
+	$DCS_Version = 'NOT INSTALLED'
+	$DCS_INSTALLED = $false
+}
+if(test-path $Lot_Entry) {
+	$LotATC_Version = (Select-String -Path $Lot_Entry -Pattern "version" | Out-String).Split('"')[-2]
+	$LotATC_INSTALLED = $true
+} else {
+	$LotATC_Version = 'NOT INSTALLED'
+	$LotATC_INSTALLED = $false
+	}
+	
+	$SRS | Add-Member -MemberType NoteProperty -Name Version -Value $LotATC_Version
+	$SRS | Add-Member -MemberType NoteProperty -Name Installed -Value $LotATC_INSTALLED
 if($DCS.count -eq 0) {
 	$DCS = New-Object -TypeName psobject 
 	$DCS | Add-Member -MemberType NoteProperty -Name Name -Value "DCS"
+	$DCS | Add-Member -MemberType NoteProperty -Name Version -Value $DCS_Version
+	$DCS | Add-Member -MemberType NoteProperty -Name Installed -Value $DCS_INSTALLED
+	$DCS | Add-Member -MemberType NoteProperty -Name Lot_Version -Value $LotATC_Version
+	$DCS | Add-Member -MemberType NoteProperty -Name Lot_Installed -Value $LotATC_INSTALLED
 	$DCS | Add-Member -MemberType NoteProperty -Name IsActive -Value $false
 	$DCS | Add-Member -MemberType NoteProperty -Name Offline -Value $true
 } else {
 	$DCS_Additional = Get-CimInstance -ClassName Win32_PerfFormattedData_PerfProc_Process | where {$_.IDProcess -eq ($DCS.Id)} | Select-Object $properties
 	$DCS | Add-Member -MemberType NoteProperty -Name Name -Value "DCS"
+	$DCS | Add-Member -MemberType NoteProperty -Name Version -Value $DCS_Version
+	$DCS | Add-Member -MemberType NoteProperty -Name Installed -Value $DCS_INSTALLED
 	$DCS | Add-Member -MemberType NoteProperty -Name IsActive -Value $true
 	$DCS | Add-Member -MemberType NoteProperty -Name Offline -Value $false
 	if($DCS.Responding) {
@@ -1572,9 +1631,18 @@ if($DCS.count -eq 0) {
 	}
 #START SRS	
 $SRS = Get-Process -Name SR-Server -ErrorAction SilentlyContinue | where {$_.Path -eq $srsEXE}| Select-Object $ProcessSelection
+if(test-path $srsEXE) {
+	$SRS_Version = (Get-ChildItem $srsEXE).VersionInfo.ProductVersion
+	$SRS_INSTALLED = $true
+} else {
+	$SRS_Version = 'NOT INSTALLED'
+	$SRS_INSTALLED = $false
+	}
 if($SRS.count -eq 0) {
 	$SRS = New-Object -TypeName psobject 
 	$SRS | Add-Member -MemberType NoteProperty -Name Name -Value "SRS"
+	$SRS | Add-Member -MemberType NoteProperty -Name Version -Value $SRS_Version
+	$SRS | Add-Member -MemberType NoteProperty -Name Installed -Value $SRS_INSTALLED	
 	$SRS | Add-Member -MemberType NoteProperty -Name IsActive -Value $false
 	$SRS | Add-Member -MemberType NoteProperty -Name Offline -Value $true
 	$SRS | Add-Member -MemberType NoteProperty -Name ClientsEnabled -Value $false
@@ -1582,6 +1650,8 @@ if($SRS.count -eq 0) {
 else {
 	$SRS_Additional = Get-CimInstance -ClassName Win32_PerfFormattedData_PerfProc_Process | where {$_.IDProcess -eq ($SRS.Id)} | Select-Object $properties
 	$SRS | Add-Member -MemberType NoteProperty -Name Name -Value "SRS"
+	$SRS | Add-Member -MemberType NoteProperty -Name Version -Value $SRS_Version
+	$SRS | Add-Member -MemberType NoteProperty -Name Installed -Value $SRS_INSTALLED		
 	$SRS | Add-Member -MemberType NoteProperty -Name IsActive -Value $true
 	$SRS | Add-Member -MemberType NoteProperty -Name Offline -Value $false
 	if($SRS.Responding) {
@@ -1609,7 +1679,7 @@ else {
 		}
 	}
 #START DCS UPDATE	
-$DCS_Upd = Get-Process -Name SR-Server -ErrorAction SilentlyContinue | where {$_.Path -eq $DCS_Updater}| Select-Object $ProcessSelection
+$DCS_Upd = (Get-Process -ErrorAction SilentlyContinue | where {$_.Path -eq $DCS_Updater}| Select-Object $ProcessSelection | Sort-Object -Property Ticks -Descending)[0]
 if($DCS_Upd.count -eq 0) {
 	$DCS_Upd = New-Object -TypeName psobject 
 	$DCS_Upd | Add-Member -MemberType NoteProperty -Name Name -Value "DCS Updater"
@@ -1635,7 +1705,7 @@ else {
 	$DCS_Upd.StartTime = ((get-date $DCS_Upd.StartTime).DateTime)
 	}
 #START SRS UPDATE
-$SRS_Upd = Get-Process -Name SR-Server -ErrorAction SilentlyContinue | where {$_.Path -eq $SRS_Updater}| Select-Object $ProcessSelection
+$SRS_Upd = Get-Process -ErrorAction SilentlyContinue | where {$_.Path -eq $SRS_Updater}| Select-Object $ProcessSelection
 if($SRS_Upd.count -eq 0) {
 	$SRS_Upd = New-Object -TypeName psobject 
 	$SRS_Upd | Add-Member -MemberType NoteProperty -Name Name -Value "SRS Updater"
@@ -1661,7 +1731,7 @@ else {
 	$SRS_Upd.StartTime = ((get-date $SRS_Upd.StartTime).DateTime)
 	}
 #START LOTATC UPDATE
-$LoT_Upd = Get-Process -Name SR-Server -ErrorAction SilentlyContinue | where {$_.Path -eq $LoT_Updater}| Select-Object $ProcessSelection
+$LoT_Upd = Get-Process -ErrorAction SilentlyContinue | where {$_.Path -eq $LoT_Updater}| Select-Object $ProcessSelection
 if($LoT_Upd.count -eq 0) {
 	$LoT_Upd = New-Object -TypeName psobject 
 	$LoT_Upd | Add-Member -MemberType NoteProperty -Name Name -Value "LotATC Updater"
@@ -1699,7 +1769,6 @@ $Status | Add-Member -MemberType NoteProperty -Name Updating -Value $Updating
 write-log -LogData "Get-Status: ENDED" -Silent
 return $Status
 }
-
 Function Check-Update { 
 write-log -LogData "Check-Update: STARTED" -Silent
 $ChkUpd = $null
@@ -1821,7 +1890,6 @@ $ChkGame | Add-Member -MemberType NoteProperty -Name SRS -Value $SRS
 write-log -LogData "Check-Game: ENDED" -Silent
 return $ChkGame
 }
-
 Function InitializeDDC2 {
 	$info = Get-ServerInfo
 	$config = Get-Config
@@ -1858,17 +1926,10 @@ Function Update-DCS {
 	#write-log -LogData "Sleeping 15 seconds" -Silent
 	Start-sleep 5;
 	#write-log -LogData 'DCS Update process SET to  $Process_UpdateDCS' -Silent
-	$Process_UpdateDCS = Get-Process -Name DCS_updater -ErrorAction SilentlyContinue
-	#write-host "Looking for DCS Updater Window: " -nonewline
-	#write-log -LogData "Selecting Window 'DCS Updater'" -Silent
-	#$shh = $Pwrshell.AppActivate('DCS Updater')
-	#write-log -LogData '$contLoop set to $true' -Silent
+	$Process_UpdateDCS = Get-Process -Name DCS_updater -ErrorAction SilentlyContinue | where {$_.Path -eq $DCS_updater}
 	$contLoop = $true
-	#write-log -LogData '$checkLoop set to 0' -Silent
 	$checkLoop = 0
-	#write-log -LogData '$working set to 0' -Silent
 	$working = 0
-	#write-log -LogData '$ticks set to 0' -Silent
 	$ticks = 0
 	#Possible Rogue TRUE Statement
 	write-log -LogData 'Starting DCS Updater While Loop' -Silent
@@ -1886,11 +1947,6 @@ Function Update-DCS {
 		}
 		else {
 			$checkLoop = $checkLoop + 1
-			
-			if ($checkLoop -eq 1) {
-				#write-log -LogData "'Enter' pressed on 'DCS Updater' window incase it has a message" -Silent
-				#$Pwrshell.SendKeys('~')
-			}
 			if($checkLoop -ge 3) {
 				write-log -LogData "CheckLoop triggered $checkLoop / 3" -Silent
 				write-log -LogData "Exit DCS Updater While Loop" -Silent
@@ -1910,12 +1966,12 @@ Function Update-DCS {
 	#write-log -LogData "'Enter' pressed on 'DCS Updater' window" -Silent
 	write-log -LogData "DCS Update Process - JOB DONE!" -Silent
 }
-
 Function Update-Server {
 $DoUpdate = $true
 $ServerStatus = $null
 
-$DCS = Get-Process -ErrorAction SilentlyContinue | where {$_.MainWindowTitle -eq $DCS_WindowTitle -and $_.Path -eq $dcsEXE} | select $ProcessSelection
+#ED Broke the -w command $DCS = Get-Process -ErrorAction SilentlyContinue | where {$_.MainWindowTitle -eq $DCS_WindowTitle -and $_.Path -eq $dcsEXE} | select $ProcessSelection
+$DCS = Get-Process -ErrorAction SilentlyContinue | where {$_.CommandLine -match "-w $DCS_WindowTitle" -and $_.Path -eq $dcsEXE} | select $ProcessSelection
 	if($DCS.count -ne 0) {
 	$DoUpdate = $false
 	}
@@ -1945,18 +2001,14 @@ start-sleep 3;
 $ServerStatus = Get-Status
 return $ServerStatus
 }
-
-
 Function Do-Update {
 	write-log -LogData "UPDATE DCS: STARTED" -Silent
 	#STOP DCS
 	write-log -LogData "UPDATE DCS: Call Stop-DCS" -Silent
 	Stop-DCS
-	Start-sleep 1;
 	if ($UPDATE_LoT) {
 		write-log -LogData "UPDATE DCS: Call Update LotATC" -Silent
 		Update-LotATC
-		Start-sleep 1;
 		}
 	else {
 		write-log -LogData "UPDATE DCS: LotATC autoupdate skipped due to UPDATE_LoT variable being set to false." -Silent
@@ -1965,7 +2017,6 @@ Function Do-Update {
 	if ($UPDATE_SRS) {
 		write-log -LogData "UPDATE DCS: Call Update SRS Update" -Silent
 		Update-SRS
-		Start-sleep 1;
 		}
 	else {
 		write-log -LogData "UPDATE DCS: SRS autoupdate skipped due to UPDATE_SRS variable being set to false." -Silent
@@ -1973,7 +2024,6 @@ Function Do-Update {
 	if ($UPDATE_DCS) {	
 		write-log -LogData "UPDATE DCS: Call Update DCS" -Silent
 		Update-DCS
-		Start-sleep 1;
 		}
 	else {
 		write-log -LogData "UPDATE DCS: DCS autoupdate skipped due to UPDATE_DCS variable being set to false." -Silent
@@ -2004,82 +2054,121 @@ write-log -LogData "Restart-DCS: ENDED" -Silent
 Function Start-DCS {
 $Running = $false	
 $Updating = $false	
-$DCS = Get-Process -ErrorAction SilentlyContinue | where {$_.MainWindowTitle -eq $DCS_WindowTitle -and $_.Path -eq $dcsEXE} | select $ProcessSelection
+#ED Broke the -w command $DCS = Get-Process -ErrorAction SilentlyContinue | where {$_.MainWindowTitle -eq $DCS_WindowTitle -and $_.Path -eq $dcsEXE} | select $ProcessSelection
+$DCS = Get-Process -ErrorAction SilentlyContinue | where {$_.CommandLine -match "-w $DCS_WindowTitle" -and $_.Path -eq $dcsEXE} | select $ProcessSelection	
 	if($DCS.count -ne 0) {
 		$Running = $true
 	}
-$SRS = Get-Process -Name SR-Server -ErrorAction SilentlyContinue | where {$_.Path -eq $srsEXE}| Select-Object $ProcessSelection
+$SRS = Get-Process  -ErrorAction SilentlyContinue | where {$_.Path -eq $srsEXE}| Select-Object $ProcessSelection
 	if($SRS.count -ne 0) {
 		$Running = $true
 	}
-$DCS_Upd = Get-Process -Name SR-Server -ErrorAction SilentlyContinue | where {$_.Path -eq $DCS_Updater}| Select-Object $ProcessSelection
+$DCS_Upd = Get-Process -ErrorAction SilentlyContinue | where {$_.Path -eq $DCS_Updater}| Select-Object $ProcessSelection
 	if($DCS_Upd.count -ne 0) {
 		$Updating = $true
 	}
-$SRS_Upd = Get-Process -Name SR-Server -ErrorAction SilentlyContinue | where {$_.Path -eq $SRS_Updater}| Select-Object $ProcessSelection
+$SRS_Upd = Get-Process -ErrorAction SilentlyContinue | where {$_.Path -eq $SRS_Updater}| Select-Object $ProcessSelection
 	if($SRS_Upd.count -ne 0) {
 		$Updating = $true
 	}
-$LoT_Upd = Get-Process -Name SR-Server -ErrorAction SilentlyContinue | where {$_.Path -eq $LoT_Updater}| Select-Object $ProcessSelection
+$LoT_Upd = Get-Process -ErrorAction SilentlyContinue | where {$_.Path -eq $LoT_Updater}| Select-Object $ProcessSelection
 	if($LoT_Upd.count -ne 0) {
 		$Updating = $true
 	}
 	if(-not $Updating -and -not $Running) {
-		$PriorityArray = @{Priority        = [Int32](256)}
+		$PriorityArray = @{Priority        = [Int32](128)}
 		if($EnableRandomizer) {PwdRandomizer}
 		write-log -LogData "Start-DCS: STARTED" -Silent
 		write-log -LogData "Starting DCS" -Silent
 		start-process $dcsexe -ArgumentList $dcsargs -WorkingDirectory $dcsdir
-		#write-log -LogData "Sleeping 3 second" -Silent
-		Start-sleep 3
-		write-log -LogData "Setting Priority for DCS" -Silent
-		$shh = Get-CimInstance -ClassName win32_process -Filter 'name = "DCS.exe"' | Invoke-CimMethod -MethodName SetPriority -Arguments $PriorityArray
 		write-log -LogData "Starting SRS" -Silent
 		start-process $srsexe -WorkingDirectory $srsdir
-		#write-log -LogData "Sleeping 2 second" -Silent
-		Start-sleep 2
-		write-log -LogData "Setting Priority for SRS" -Silent
-		$shh = Get-CimInstance -ClassName win32_process -Filter 'name = "SR-Server.exe"' | Invoke-CimMethod -MethodName SetPriority -Arguments $PriorityArray
-		#write-log -LogData "Sleeping 15 second" -Silent
-		Start-sleep 10
-		$ContinueSleep = $false
+		$checkLoop = 0
 		$sleepTime = 0
-		while (-not $ContinueSleep) {
-		Start-sleep 1
-		$DCS = Get-Process -ErrorAction SilentlyContinue | where {$_.MainWindowTitle -eq $DCS_WindowTitle -and $_.Path -eq $dcsEXE} | select $ProcessSelection
+		$contLoop = $true
+		$DCS = Get-Process -ErrorAction SilentlyContinue | where {$_.CommandLine -match "-w $DCS_WindowTitle" -and $_.Path -eq $dcsEXE} | select $ProcessSelection
+		while ($contLoop) {
+		Start-sleep 1;
 		$sleepTime = $sleepTime + 1
-		$ContinueSleep = $DCS.Responding
+		#ED Broke the -w command $DCS = Get-Process -ErrorAction SilentlyContinue | where {$_.MainWindowTitle -eq $DCS_WindowTitle -and $_.Path -eq $dcsEXE} | select $ProcessSelection
+		$DCS_Check = Get-Process -ErrorAction SilentlyContinue | where {$_.Id -eq $DCS.Id} | select $ProcessSelection
+		if($DCS_Check.count -gt 0) {
+			if($DCS_Check.Responding) {
+				$checkLoop = $checkLoop + 1
+			} else {
+				write-log -LogData "DCS stopped Responding, resetting DCS Response Check to 0" -Silent
+				$checkLoop = 0
+			}
 		}
-		write-log -LogData "DCS Process not responding initiation time was $sleepTime seconds" -Silent
-		#write-log -LogData "Shaping and Moving DCS Window" -Silent
-		Set-Window -ProcessName DCS -X 150 -y 25 -Width 160 -Height 120
-		#write-log -LogData "Moving SRS Window" -Silent
-		Set-Window -ProcessName SR-Server -x 305 -y 25
+		if($sleepTime -eq 4) {
+			write-log -LogData "Setting Priority for DCS" -Silent
+			$shh = Get-CimInstance -ClassName win32_process -Filter 'name = "DCS.exe"' | Invoke-CimMethod -MethodName SetPriority -Arguments $PriorityArray
+			write-log -LogData "Setting Priority for SRS" -Silent
+			$shh = Get-CimInstance -ClassName win32_process -Filter 'name = "SR-Server.exe"' | Invoke-CimMethod -MethodName SetPriority -Arguments $PriorityArray
+		}
+<# 		if($sleepTime -eq 6) {
+		write-log -LogData "Shaping and Moving DCS Window" -Silent
+		Set-Window -ProcessName DCS -ProcessID $DCS.id  -x 150 -y 25 -Width 160 -Height 120
+		write-log -LogData "Moving SRS Window" -Silent
+		Set-Window -ProcessName SR-Server -ProcessID $SRS.id -x 305 -y 25	
+		}	 #>	
+		
+		if($checkLoop -ge 10 -and $checkLoop -ne 0) {
+			write-log -LogData "DCS Response Check - $checkLoop / 10 consecutive checks" -Silent
+			write-log -LogData "DCS Response Check Loop Finished" -Silent
+			$contLoop = $false
+		} else {write-log -LogData "DCS Response Check - $checkLoop / 10 consecutive checks" -Silent}
+		}
+		Start-sleep 10;
+		Set-Window -ProcessName DCS -ProcessID $DCS.id  -x 150 -y 25 -Width 160 -Height 120
+		Set-Window -ProcessName SR-Server -ProcessID $SRS.id -x 305 -y 25
 		write-log -LogData "Start-DCS: ENDED" -Silent
 		###Add DCS Firewall Rules here
+	} else {
+		if($Updating) {write-log -LogData "Start-DCS: ENDED - Update Running" -Silent}
+		if($Running) {write-log -LogData "Start-DCS: ENDED - DCS already Running" -Silent}
 	}
+}
+Function Stop {
+param(
+	[switch]$All,
+	[switch]$DCS,
+	[switch]$SRS,
+	[switch]$Game,
+	[switch]$Update
+)
+	if($all -or $DCS -or $Game) {Stop-DCS}
+	if($all -or $SRS -or $Game) {Stop-SRS}
+	if($all -or $Update) {Stop-Update}
 }
 Function Stop-DCS {
 	write-log -LogData "Stop-DCS: STARTED" -Silent
-	$DCS = Get-Process -ErrorAction SilentlyContinue | where {$_.MainWindowTitle -eq $DCS_WindowTitle -and $_.Path -eq $dcsEXE} | select $ProcessSelection
-	$SRS = Get-Process -Name SR-Server -ErrorAction SilentlyContinue | where {$_.Path -eq $srsEXE}| Select-Object $ProcessSelection
-	$DCS_Upd = Get-Process -Name SR-Server -ErrorAction SilentlyContinue | where {$_.Path -eq $DCS_Updater}| Select-Object $ProcessSelection
-	$SRS_Upd = Get-Process -Name SR-Server -ErrorAction SilentlyContinue | where {$_.Path -eq $SRS_Updater}| Select-Object $ProcessSelection
-	$LoT_Upd = Get-Process -Name SR-Server -ErrorAction SilentlyContinue | where {$_.Path -eq $LoT_Updater}| Select-Object $ProcessSelection
+	#ED Broke the -w command $DCS = Get-Process -ErrorAction SilentlyContinue | where {$_.MainWindowTitle -eq $DCS_WindowTitle -and $_.Path -eq $dcsEXE} | select $ProcessSelection
+	$DCS = Get-Process -ErrorAction SilentlyContinue | where {$_.CommandLine -match "-w $DCS_WindowTitle" -and $_.Path -eq $dcsEXE} | select $ProcessSelection
 	write-log -LogData 'FORCE Stopping DCS...' -Silent
 	$DCS | stop-process -Force
+	write-log -LogData "Stop-DCS: ENDED" -Silent
+}
+Function Stop-SRS {
+	write-log -LogData "Stop-SRS: STARTED" -Silent
+	$SRS = Get-Process -ErrorAction SilentlyContinue | where {$_.Path -eq $srsEXE}| Select-Object $ProcessSelection
 	write-log -LogData 'FORCE Stopping SRS...' -Silent
 	$SRS | stop-process -Force
+	write-log -LogData "Stop-SRS: ENDED" -Silent
+}
+Function Stop-Update {
+	write-log -LogData "Stop-Update: STARTED" -Silent
+	$DCS_Upd = Get-Process -ErrorAction SilentlyContinue | where {$_.Path -eq $DCS_Updater}| Select-Object $ProcessSelection
+	$SRS_Upd = Get-Process -ErrorAction SilentlyContinue | where {$_.Path -eq $SRS_Updater}| Select-Object $ProcessSelection
+	$LoT_Upd = Get-Process -ErrorAction SilentlyContinue | where {$_.Path -eq $LoT_Updater}| Select-Object $ProcessSelection
 	write-log -LogData 'FORCE Stopping DCS Updater...' -Silent
 	$DCS_Upd | stop-process -Force
 	write-log -LogData 'FORCE Stopping SRS Updater...' -Silent
 	$SRS_Upd | stop-process -Force
 	write-log -LogData 'FORCE Stopping LotATC Updater...' -Silent
 	$LoT_Upd | stop-process -Force
-	write-log -LogData "Stop-DCS: ENDED" -Silent
+	write-log -LogData "Stop-Update: ENDED" -Silent
 }
-
-
 
 ########################################################################################################################################################################################################
 #RADIO CONTROL##########################################################################################################################################################################################
@@ -2124,30 +2213,36 @@ $RadioData | Add-Member -MemberType NoteProperty -Name Side -Value $Coal
 return $RadioData
 }
 
-
-
 ########################################################################################################################################################################################################
 #EXECUTION SECTION######################################################################################################################################################################################
 ########################################################################################################################################################################################################
 #Server & DCS Control Commands
 if ($Start) {
 	Start-DCS
-	$DCSreturn = InitializeDDC2
+	$DCSreturn = get-status
+	#$DCSreturn = InitializeDDC2
 	}
 if ($Restart) {
 	Restart-DCS
-	$DCSreturn = InitializeDDC2
+	$DCSreturn = get-status
+	#$DCSreturn = InitializeDDC2
 	}
 if ($Stop) {
-	Stop-DCS
+	#This is where the different stop commands are run depending on the switches recieved from Node-Red, Default action is set in the Node-Red Stop Function Pre-Processing Node.
+	if($StopAll) {stop -All}
+	if($StopGame) {stop -Game} #Default
+	if($StopDCS) {stop -DCS}
+	if($StopSRS) {stop -SRS}
+	if($StopUpdate) {stop -Update}
 	$DCSreturn = get-status
 	}
 if ($Update) {
 	$DCSreturn = Update-Server
-	#$DCSreturn = get-status
+	$DCSreturn = get-status
 	}
 if ($DoUpdate) {
 	Do-Update
+	$DCSreturn = get-status
 	}
 If ($Status) {
 	$DCSreturn = get-status
@@ -2170,4 +2265,4 @@ if ($Radio) {
 if ($init) {$DCSreturn = InitializeDDC2}
 $DCSreturnJSON = $DCSreturn | ConvertTo-Json -Depth 100
 write-log -LogData "##JOB-DONE#####################################JOB-DONE##" -Silent
-return $DCSreturnJSON
+if ($DCSreturnJSON -ne "null") {return $DCSreturnJSON}
