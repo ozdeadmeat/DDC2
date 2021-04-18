@@ -2,7 +2,7 @@
 DCS Controller Script for Node-Red & Discord Interaction
 # Version 2.0b
 # Writen by OzDeaDMeaT
-# 16-04-2021
+# 18-04-2021
 ####################################################################################################
 #CHANGE LOG#########################################################################################
 ####################################################################################################
@@ -11,6 +11,7 @@ DCS Controller Script for Node-Red & Discord Interaction
 - Extraction of configuration data from Node-Red workflow to enable easier and less fiddly upgrades of DDC2 moving forward
 - Introduced Radio feature allowing people to send audio messages to SRS frequency via a text message in discord
 - Added dependency to Powershell 7.x (Powershell 5.x is no longer supported)
+- Added more detail into setup-port function for admins
 ####################################################################################################
 #>
 param(
@@ -349,6 +350,16 @@ Param (
 <#
 
 #IMPORTANT NOTICE:::: RDP or VNC Set it up manually
+
+Usage Process:
+1. Stop DCS, SRS and any updates happening on your server
+2. To get this function available in your Powershell browse to your DDC2 installation folder and execute: . .\ddc2.ps1
+3. Make sure your ddc2_config.ps1 file has all the correct folders mapped for this specific instance of DCS and supporting Applications
+#If not, fix the issues and then re execute: . .\ddc2.ps1
+4. Follow example below.
+5. Execute the !refresh command from inside discord and then !start your server or reboot your server
+
+Example: Setup-Ports -DCSPort 8881
 
 This function sets up ports in accordance with a specific pattern listed below
 $DCSPort = DCS World Port (8881)
