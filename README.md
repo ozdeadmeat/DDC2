@@ -1,11 +1,7 @@
 # DDC2
-## Discord to DCS Command and Control 2.0b Release##
+## Discord to DCS Command and Control 2.0c Release##
 
-NOTE: This version is now feature complete. 
-
-Features Untested:
-
-- Multi-Instance (Untested)
+NOTE: This version is now feature complete.
 
 New Instructions:
 
