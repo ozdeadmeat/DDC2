@@ -1,14 +1,12 @@
 <#
 Discord to DCS Command & Control Settings Script
-# Version 2.0b
+# Version 2.0c
 # Writen by OzDeaDMeaT
-# 16-04-2021
+# 23-04-2021
 ########################################################################################################################################################################################################
 #CHANGE LOG#############################################################################################################################################################################################
 ########################################################################################################################################################################################################
-- v2.0b Analysing errors in Start and Restart Functions with new version of DCS
-- v2.0b Update function re-work
-- v2.0b DEVTOOLS Add Sanitize Function for ddc2_config.ps1 for faster releases.
+- v2.0c Added Moose.lua Path and $UPDATE_MOOSE variable for automated Moose.lua updates if your server keeps moose.lua external to your mission files
 
 ########################################################################################################################################################################################################
 #>
@@ -16,14 +14,46 @@ Discord to DCS Command & Control Settings Script
 #SERVER FILE PATH CONFIGURATION SECTION#################################################################################################################################################################
 ########################################################################################################################################################################################################
 #Paths variables are written with "", so for example "C:\Program Files\RealVNC\VNC Server\vncserver.exe" for a DIR leave the file \ out 
-$VNC_Path			= "PATH DATA REQUIRED"										#Path to VNC Server EXE
+$VNC_Path			= "PATH DATA OPTIONAL"										#Path to VNC Server EXE
 $DCS_Profile 		= "PATH DATA REQUIRED" 									#DCS Server Profile Path
 $dcsDIR 			= "PATH DATA REQUIRED"			 												#DCS Install Location
-$srsDIR 			= "PATH DATA REQUIRED" 												#SRS Installation Location
+$srsDIR 			= "PATH DATA OPTIONAL" 												#SRS Installation Location
 $srsClients			= "$srsDIR\clients-list.json"																#Clients Data Export for SRS. User Count and Names used for Server Status messages. if you do not wish to use this feature enter a file that does not exist and it will skip this part of the status report
-$LotDIR 			= "PATH DATA REQUIRED" 																	#LotATC Installation Location
+$LotDIR 			= "PATH DATA OPTIONAL" 																	#LotATC Installation Location
 $Lot_Config 		= "$DCS_Profile\Mods\services\LotAtc\config.custom.lua"										#LotATC Custom Config File
-$TacvDIR 			= "PATH DATA REQUIRED" 																	#Tacview Installation Location
+$TacvDIR 			= "PATH DATA OPTIONAL" 																	#Tacview Installation Location
+$MOOSE_Path			= "PATH DATA OPTIONAL"															#Path to external mission Moose.lua file
+
+########################################################################################################################################################################################################
+#SERVER IDENTITY CONFIGURATION SECTION##################################################################################################################################################################
+########################################################################################################################################################################################################
+#DDC2 IDENTITY, DOWNTIME & COMMAND PREFIX
+$ServerID = "DATA REQUIRED"																			#ServerID for DDC2
+$ServerDT = "DATA REQUIRED"															#Downtime Notice Text
+$DDC2_CommandPrefix = "!"																		#This will change all commands prefixes, do not use - ' " $ # ` / \
+
+#VNC Enabled
+$VNCEnabled = $FALSE
+$VNCPort = ""
+$VNCType = ""
+
+#HostedBy Information
+$HostedByMember = $TRUE 																		#If this is set to TRUE it will display contact info for the person hosting the server rather than just the Name element
+$HostedByName = "DATA REQUIRED" 																	#Name of person paying for or providing the hosting
+$HostedAT = "DATA REQUIRED" 																#Name of person or Organisation Hosting the server (AWS, Azure, etc etc)
+$DiscordID = 'DATA REQUIRED' 															#Use single quotes, DISCORD ID of Host
+
+#Suport Contact Info
+$SupportByMember = $TRUE																		#If this is set to TRUE it will display contact info for the person supporting the server rather than just the data element
+$SupportContactID = 'DATA REQUIRED' 													#Use single quotes, DISCORD ID of Host
+$SupportBy = "DATA REQUIRED" 																		#Name of person supporting the server (if SupportedByMember is set to True
+$SupportTimeTXT = "DATA REQUIRED"						#Times when Support channel is being actively manned.
+$SupportContactTXT = "DATA REQUIRED" 	#Text for support request when requested in the wrong channel.
+
+#ISP Information
+$ISP = "DATA REQUIRED"
+$NetSpeed = 'DATA REQUIRED'
+$DNSName = "DATA REQUIRED"
 
 ########################################################################################################################################################################################################
 #SRS TEXT TO SPEECH CONFIGURATION SECTION#################################################################################################################################################################
@@ -44,6 +74,7 @@ $LoTBETA 			= $FALSE																					#Not currently in use
 $UPDATE_DCS			= $TRUE																						#Enables and disables the automated update process for DCS
 $UPDATE_SRS			= $TRUE																						#Enables and disables the automated update process for SRS
 $UPDATE_LoT			= $TRUE																						#Enables and disables the automated update process for LotATC
+$UPDATE_MOOSE		= $FALSE																						#Enables and disables the automated update process for Moose.lua
 $AutoStartonUpdate	= $TRUE																						#AutoRestarts the DCS Server after updates are complete. (Default: $TRUE)
 $SHOW_BLUPWD		= $TRUE																						#Set this to false if you do not want passwords published by DDC2 in non Admin Channels
 $SHOW_REDPWD		= $TRUE																						#Set this to false if you do not want passwords published by DDC2 in non Admin Channels
@@ -93,37 +124,6 @@ $SRS_AutoConnect	= "$DCS_Profile\Scripts\Hooks\DCS-SRS-AutoConnectGameGUI.lua"		
 $SRS_External		= "$srsDIR\DCS-SR-ExternalAudio.exe"														#SRS External TXT to Speech exe
 $SRS_Updater 		= "$srsDIR\SRS-AutoUpdater.exe"																#SRS Updater Executable
 $SRS_Updater_Args 	= if($SRSBETA) {"-beta","-server","-path=$srsDIR"} else {"-server","-path=$srsDIR"}			#SRS Updater Arguments 
-
-########################################################################################################################################################################################################
-#SERVER IDENTITY CONFIGURATION SECTION##################################################################################################################################################################
-########################################################################################################################################################################################################
-#DDC2 IDENTITY
-$ServerID = "DATA REQUIRED"																			#ServerID for DDC2
-$ServerDT = "DATA REQUIRED"															#Downtime Notice Text
-
-#VNC Enabled
-$VNCEnabled = $FALSE
-$VNCPort = ""
-$VNCType = ""
-
-#HostedBy Information
-$HostedByMember = $TRUE 																		#If this is set to TRUE it will display contact info for the person hosting the server rather than just the Name element
-$HostedByName = "DATA REQUIRED" 																	#Name of person paying for or providing the hosting
-$HostedAT = "DATA REQUIRED" 																#Name of person or Organisation Hosting the server (AWS, Azure, etc etc)
-$DiscordID = 'DATA REQUIRED' 															#Use single quotes, DISCORD ID of Host
-
-#Suport Contact Info
-$SupportByMember = $TRUE																		#If this is set to TRUE it will display contact info for the person supporting the server rather than just the data element
-$SupportContactID = 'DATA REQUIRED' 													#Use single quotes, DISCORD ID of Host
-$SupportBy = "DATA REQUIRED" 																		#Name of person supporting the server (if SupportedByMember is set to True
-$SupportTimeTXT = "DATA REQUIRED"						#Times when Support channel is being actively manned.
-$SupportContactTXT = "DATA REQUIRED" 	#Text for support request when requested in the wrong channel.
-
-#ISP Information
-$ISP = "DATA REQUIRED"
-$NetSpeed = 'DATA REQUIRED'
-$DNSName = "DATA REQUIRED"
-
 ########################################################################################################################################################################################################
 #DISCORD CHANNEL.ID CONFIGURATION SECTION###############################################################################################################################################################
 ########################################################################################################################################################################################################
@@ -220,4 +220,4 @@ $CMDPerms | Add-Member -MemberType NoteProperty -Name reboot -Value $rebootPerm
 $CMDPerms | Add-Member -MemberType NoteProperty -Name radio -Value $radioPerm
 
 ########################################################################################################################################################################################################
-$DDC2_PSConfig_Version = "v2.0b"
+$DDC2_PSConfig_Version = "v2.0c"
