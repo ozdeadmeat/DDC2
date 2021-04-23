@@ -1,17 +1,21 @@
 <#
 DCS Controller Script for Node-Red & Discord Interaction
-# Version 2.0b
+# Version 2.0c
 # Writen by OzDeaDMeaT
-# 18-04-2021
+# 23-04-2021
 ####################################################################################################
 #CHANGE LOG#########################################################################################
 ####################################################################################################
-- Seperated Stop commands to be more Granular
-- Seperation of settings from primary ddc2.ps1 file.
-- Extraction of configuration data from Node-Red workflow to enable easier and less fiddly upgrades of DDC2 moving forward
-- Introduced Radio feature allowing people to send audio messages to SRS frequency via a text message in discord
-- Added dependency to Powershell 7.x (Powershell 5.x is no longer supported)
-- Added more detail into setup-port function for admins
+- Removed ED Bug -w DCS.exe process work around, response performance improved
+- Fixed Bug were !status command would overwrite Application Versions with Empty Strings (!version command was showing empty values for application versions)
+- Fixed Start Loop error causing start command powershell to never complete.
+- Added - Ability to change Command Prefix from !
+- Reduced log spam produced by start function
+- Added more DDC2 Config data into Get-ServerInfo function
+- Added Console returns for setup-ports and set-port functions
+- Added more detail to Check-DDC2 console output
+- Added Check-Ports to output ports configured in the config files DDC2 are configured for and outputs to console output
+
 ####################################################################################################
 #>
 param(
@@ -63,7 +67,7 @@ $DCSreturn 			= $null
 $DCSreturnJSON 		= $null
 $selection 			= 'Name', 'id', 'ProcessName', 'PriorityClass', 'ProductVersion', 'Responding', 'StartTime', @{Name='Ticks';Expression={$_.TotalProcessorTime.Ticks}}, @{Name='MemGB';Expression={'{00:N2}' -f ($_.WS/1GB)}}
 $ProcessSelection = 'id', 'PriorityClass', 'ProductVersion', 'Responding', 'StartTime', @{Name='Ticks';Expression={$_.TotalProcessorTime.Ticks}}, @{Name='MemGB';Expression={'{00:N2}' -f ($_.WS/1GB)}}, 'MainWindowTitle', 'Path'
-$DDC2_PSCore_Version = "v2.0b"
+$DDC2_PSCore_Version = "v2.0c"
 ####################################################################################################
 ########################################################################################################################################################################################################
 ##This section Sets the DDC2 Location for execution and sets the correct config and log files to write to.
@@ -72,11 +76,12 @@ if(($DDC2DIR).count -gt 0) {
 			$currentDIR = $DDC2DIR
 		} else {
 			$currentDIR = (Get-Location).Path
+			$DDC2DIR = $currentDIR
 		 }
 } else {
 	$currentDIR = (Get-Location).Path
 	}
-$PS_LogFile			= "$currentDIR\DDC2.log" 															#Log File Location for this script
+$DDC2_LogFile			= "$currentDIR\DDC2.log" 															#Log File Location for this script
 $DDC2_Config 		= "$currentDIR\ddc2_config.ps1"														#DDC2 Configuration and Settings File Location
 ####################################################################################################
 Function Write-Log {
@@ -91,7 +96,7 @@ write-log -LogData "This data is going into the log" -LogFile "test.log"
  
 Param (
 $LogData = "",
-$LogFile = $PS_LogFile,
+$LogFile = $DDC2_LogFile,
 [switch]$Silent
 )
 if ($LogData -ne "") {
@@ -155,44 +160,34 @@ if ($PSMajorVer -lt $PSRequired) {
 	write-log -LogData "Powershell $PSMajorVer version found, Powershell check OK!" -Silent
 	}
 ########################################################################################################################################################################################################
-
-Function StringOutPorts {
-Param ($Id)
-$Netprocess = get-nettcpconnection -OwningProcess $Id -ErrorAction SilentlyContinue | Where-Object{$_.State -eq 'Listen'} | Select-Object localPort,State | Sort LocalPort
-$PortOut = ""
-Foreach($item in $Netprocess) {
-		$PortOut = $PortOut + $item.LocalPort
-		if($item -ne $Netprocess[-1]) {$PortOut = $PortOut + ", "}
-	}
-return $PortOut
-}
-Function Check-DDC2-PS {
+#DDC2 SETUP FUNCTIONS###################################################################################################################################################################################
+########################################################################################################################################################################################################
+Function Check-DDC2 {
 <# 
 .DESCRIPTION 
 This function checks that all the config files etc have been entered correctly into the DDC2 Powershell script
  
 .EXAMPLE
-Check-DDC2-PS
+Check-DDC2
 #>
 write-host "Reloading DDC2.ps1 file into memory"
 . .\DDC2.ps1
-write-host "Checking DDC2.ps1 admin entered file paths...." -ForegroundColor white
-write-log -LogData "Checking DDC2.ps1 admin entered file paths...." -silent
 ####################################################################################################
-write-host '$PS_LogFile			== ' -nonewline -ForegroundColor white
-if (test-path $PS_LogFile) {
+write-host '$DDC2_LogFile	(ddc2.ps1)	== ' -nonewline -ForegroundColor white
+if (test-path $DDC2_LogFile) {
 	write-host "OK" -nonewline -ForegroundColor green
-	write-host " - $PS_LogFile" -ForegroundColor yellow
+	write-host " - $DDC2_LogFile" -ForegroundColor yellow
 	} else {write-host "Not Found" -ForegroundColor red}
+####################################################################################################
+write-host " "
+write-host "Checking Variables from ddc2_config.ps1 ...." -ForegroundColor white
+
 write-host '$VNC_Path			== ' -nonewline -ForegroundColor white
 if (test-path $VNC_Path) {
 	write-host "OK" -nonewline -ForegroundColor green
 	write-host " - $VNC_Path" -ForegroundColor yellow
 	} else {write-host "Not Found" -ForegroundColor red}	
-####################################################################################################
-write-host " "
-write-host "Checking all DCS Variables...." -ForegroundColor white
-
+	
 write-host '$DCS_Profile 			== ' -nonewline -ForegroundColor white
 if (test-path $DCS_Profile) {
 	write-host "OK" -nonewline -ForegroundColor green
@@ -237,9 +232,6 @@ if (test-path $DCS_Updater) {
 #END DCS Variables
 ####################################################################################################
 #Start SRS Variables
-write-host " "
-write-host "Checking all SRS Variables...." -ForegroundColor white
-
 write-host '$srsDIR 			== ' -nonewline -ForegroundColor white
 if (test-path $srsDIR) {
 	write-host "OK" -nonewline -ForegroundColor green
@@ -278,9 +270,6 @@ if (test-path $SRS_Updater) {
 #END SRS Variables
 ####################################################################################################
 #Start LotATC Variables
-write-host " "
-write-host "Checking all LotATC Variables...." -ForegroundColor white
-
 write-host '$LotDIR 			== ' -nonewline -ForegroundColor white
 if (test-path $LotDIR) {
 	write-host "OK" -nonewline -ForegroundColor green
@@ -313,9 +302,6 @@ if (test-path $LotDIR) {
 #END LotATC Variables
 ####################################################################################################
 #Start TACView Variables
-write-host " "
-write-host "Checking all TACView Variables...." -ForegroundColor white
-
 write-host '$TacvDIR 			== ' -nonewline -ForegroundColor white
 if (test-path $TacvDIR) {
 	write-host "OK" -nonewline -ForegroundColor green
@@ -339,9 +325,302 @@ if (test-path $TACv_Config) {
 	write-host "OK" -nonewline -ForegroundColor green
 	write-host " - $TACv_Config" -ForegroundColor yellow
 	} else {write-host "Not Found" -ForegroundColor red}
+
 write-host " "
+write-host "DDC2 Settings...." -ForegroundColor white
+
+write-host '$ServerID		 	== ' -nonewline -ForegroundColor white
+write-host $ServerID -ForegroundColor green
+
+write-host '$ServerDT		 	== ' -nonewline -ForegroundColor white
+write-host $ServerDT -ForegroundColor green
+
+write-host '$DDC2_CommandPrefix		== ' -nonewline -ForegroundColor white
+write-host $DDC2_CommandPrefix -ForegroundColor green
+
+write-host '$VNCEnabled			== ' -nonewline -ForegroundColor white
+if($VNCEnabled) {write-host "Enabled" -ForegroundColor green} else {write-host "Disabled" -ForegroundColor yellow}
+
+write-host '$VNCPort			== ' -nonewline -ForegroundColor white
+write-host $VNCPort -ForegroundColor green
+
+write-host '$VNCType			== ' -nonewline -ForegroundColor white
+write-host $VNCType -ForegroundColor green
+
+write-host '$HostedByMember			== ' -nonewline -ForegroundColor white
+if($HostedByMember) {write-host "Enabled" -ForegroundColor green} else {write-host "Disabled" -ForegroundColor yellow}
+
+write-host '$HostedByName			== ' -nonewline -ForegroundColor white
+write-host $HostedByName -ForegroundColor green
+
+write-host '$HostedAT			== ' -nonewline -ForegroundColor white
+write-host $HostedAT -ForegroundColor green
+
+write-host '$DiscordID			== ' -nonewline -ForegroundColor white
+write-host $DiscordID -ForegroundColor green
+
+write-host '$SupportByMember		== ' -nonewline -ForegroundColor white
+if($SupportByMember) {write-host "Enabled" -ForegroundColor green} else {write-host "Disabled" -ForegroundColor yellow}
+
+write-host '$SupportContactID		== ' -nonewline -ForegroundColor white
+write-host $SupportContactID -ForegroundColor green
+
+write-host '$SupportBy			== ' -nonewline -ForegroundColor white
+write-host $SupportBy -ForegroundColor green
+
+write-host '$SupportTimeTXT			== ' -nonewline -ForegroundColor white
+write-host $SupportTimeTXT -ForegroundColor green
+
+write-host '$SupportContactTXT		== ' -nonewline -ForegroundColor white
+write-host $SupportContactTXT -ForegroundColor green
+
+write-host '$ISP				== ' -nonewline -ForegroundColor white
+write-host $ISP -ForegroundColor green
+
+write-host '$NetSpeed			== ' -nonewline -ForegroundColor white
+write-host $NetSpeed -ForegroundColor green
+
+write-host '$DNSName			== ' -nonewline -ForegroundColor white
+write-host $DNSName -ForegroundColor green
+
+write-host '$SRS_FreqLOW			== ' -nonewline -ForegroundColor white
+write-host $SRS_FreqLOW -ForegroundColor green
+
+write-host '$SRS_FreqHIGH			== ' -nonewline -ForegroundColor white
+write-host $SRS_FreqHIGH -ForegroundColor green
+
+write-host '$SRS_DefaultMOD			== ' -nonewline -ForegroundColor white
+write-host $SRS_DefaultMOD -ForegroundColor green
+
+write-host '$SRS_DefaultVOL			== ' -nonewline -ForegroundColor white
+write-host $SRS_DefaultVOL -ForegroundColor green
+
+write-host '$SRS_DefaultCoal		== ' -nonewline -ForegroundColor white
+write-host $SRS_DefaultCoal -ForegroundColor green
+
+write-host '$DDC2_HELP			== ' -nonewline -ForegroundColor white
+if($DDC2_HELP) {write-host "Enabled" -ForegroundColor green} else {write-host "Disabled" -ForegroundColor yellow}
+
+write-host '$DCSBETA			== ' -nonewline -ForegroundColor white
+if($DCSBETA) {write-host "Enabled" -ForegroundColor green} else {write-host "Disabled" -ForegroundColor yellow}
+
+write-host '$SRSBETA			== ' -nonewline -ForegroundColor white
+if($SRSBETA) {write-host "Enabled" -ForegroundColor green} else {write-host "Disabled" -ForegroundColor yellow}
+
+write-host '$LoTBETA			== ' -nonewline -ForegroundColor white
+if($LoTBETA) {write-host "Enabled" -ForegroundColor green} else {write-host "Disabled" -ForegroundColor yellow}
+
+write-host '$UPDATE_DCS			== ' -nonewline -ForegroundColor white
+if($UPDATE_DCS) {write-host "Enabled" -ForegroundColor green} else {write-host "Disabled" -ForegroundColor yellow}
+
+write-host '$UPDATE_SRS			== ' -nonewline -ForegroundColor white
+if($UPDATE_SRS) {write-host "Enabled" -ForegroundColor green} else {write-host "Disabled" -ForegroundColor yellow}
+
+write-host '$UPDATE_LoT			== ' -nonewline -ForegroundColor white
+if($UPDATE_LoT) {write-host "Enabled" -ForegroundColor green} else {write-host "Disabled" -ForegroundColor yellow}
+
+write-host '$UPDATE_MOOSE			== ' -nonewline -ForegroundColor white
+if($UPDATE_MOOSE) {write-host "Enabled" -ForegroundColor green} else {write-host "Disabled" -ForegroundColor yellow}
+
+write-host '$AutoStartonUpdate		== ' -nonewline -ForegroundColor white
+if($AutoStartonUpdate) {write-host "Enabled" -ForegroundColor green} else {write-host "Disabled" -ForegroundColor yellow}
+
+write-host '$UPDATE_MOOSE			== ' -nonewline -ForegroundColor white
+if($UPDATE_MOOSE) {write-host "Enabled" -ForegroundColor green} else {write-host "Disabled" -ForegroundColor yellow}
+
+write-host '$SHOW_BLUPWD			== ' -nonewline -ForegroundColor white
+if($SHOW_BLUPWD) {write-host "Enabled" -ForegroundColor green} else {write-host "Disabled" -ForegroundColor yellow}
+
+write-host '$SHOW_REDPWD			== ' -nonewline -ForegroundColor white
+if($SHOW_REDPWD) {write-host "Enabled" -ForegroundColor green} else {write-host "Disabled" -ForegroundColor yellow}
+
+write-host '$SHOW_SRVPWD			== ' -nonewline -ForegroundColor white
+if($SHOW_SRVPWD) {write-host "Enabled" -ForegroundColor green} else {write-host "Disabled" -ForegroundColor yellow}
+
+write-host '$SHOW_LotATC			== ' -nonewline -ForegroundColor white
+if($SHOW_LotATC) {write-host "Enabled" -ForegroundColor green} else {write-host "Disabled" -ForegroundColor yellow}
+
+write-host '$SHOW_TACView			== ' -nonewline -ForegroundColor white
+if($SHOW_TACView) {write-host "Enabled" -ForegroundColor green} else {write-host "Disabled" -ForegroundColor yellow}
+
+write-host '$ACCESS_LOOP_DELAY		== ' -nonewline -ForegroundColor white
+write-host $ACCESS_LOOP_DELAY -ForegroundColor green
+
+write-host '$UPDATE_LOOP_DELAY		== ' -nonewline -ForegroundColor white
+write-host $UPDATE_LOOP_DELAY -ForegroundColor green
+
+write-host '$EnableRandomizer		== ' -nonewline -ForegroundColor white
+if($EnableRandomizer) {write-host "Enabled" -ForegroundColor green} else {write-host "Disabled" -ForegroundColor yellow}
+
+write-host '$ServerPassword			== ' -nonewline -ForegroundColor white
+if($ServerPassword) {write-host "Enabled" -ForegroundColor green} else {write-host "Disabled" -ForegroundColor yellow}
+
+write-host '$SRSPassword			== ' -nonewline -ForegroundColor white
+if($SRSPassword) {write-host "Enabled" -ForegroundColor green} else {write-host "Disabled" -ForegroundColor yellow}
+
+write-host '$SeperateLOT			== ' -nonewline -ForegroundColor white
+if($SeperateLOT) {write-host "Enabled" -ForegroundColor green} else {write-host "Disabled" -ForegroundColor yellow}
+
+write-host '$SeperateTAC			== ' -nonewline -ForegroundColor white
+if($SeperateTAC) {write-host "Enabled" -ForegroundColor green} else {write-host "Disabled" -ForegroundColor yellow}
+
+write-host '$AdminChannel			== ' -nonewline -ForegroundColor white
+write-host $AdminChannel -ForegroundColor green
+
+write-host '$BlueChannel			== ' -nonewline -ForegroundColor white
+write-host $BlueChannel -ForegroundColor green
+
+write-host '$RedChannel			== ' -nonewline -ForegroundColor white
+write-host $RedChannel -ForegroundColor green
+
+write-host '$LogChannel			== ' -nonewline -ForegroundColor white
+write-host $LogChannel -ForegroundColor green
+
+write-host '$SupportChannel			== ' -nonewline -ForegroundColor white
+write-host $SupportChannel -ForegroundColor green
+
+write-host '$ServerStatus			== ' -nonewline -ForegroundColor white
+write-host $ServerStatus -ForegroundColor green
+
+write-host '$testPerm			== ' -nonewline -ForegroundColor white
+write-host $testPerm -ForegroundColor green
+
+write-host '$versionPerm			== ' -nonewline -ForegroundColor white
+write-host $versionPerm -ForegroundColor green
+
+write-host '$infoPerm			== ' -nonewline -ForegroundColor white
+write-host $infoPerm -ForegroundColor green
+
+write-host '$supportPerm			== ' -nonewline -ForegroundColor white
+write-host $supportPerm -ForegroundColor green
+
+write-host '$helpPerm			== ' -nonewline -ForegroundColor white
+write-host $helpPerm -ForegroundColor green
+
+write-host '$refreshPerm			== ' -nonewline -ForegroundColor white
+write-host $refreshPerm -ForegroundColor green
+
+write-host '$configPerm			== ' -nonewline -ForegroundColor white
+write-host $configPerm -ForegroundColor green
+
+write-host '$radioPerm			== ' -nonewline -ForegroundColor white
+write-host $radioPerm -ForegroundColor green
+
+write-host '$startPerm			== ' -nonewline -ForegroundColor white
+write-host $startPerm -ForegroundColor green
+
+write-host '$stopPerm			== ' -nonewline -ForegroundColor white
+write-host $stopPerm -ForegroundColor green
+
+write-host '$restartPerm			== ' -nonewline -ForegroundColor white
+write-host $restartPerm -ForegroundColor green
+
+write-host '$statusPerm			== ' -nonewline -ForegroundColor white
+write-host $statusPerm -ForegroundColor green
+
+write-host '$updatePerm			== ' -nonewline -ForegroundColor white
+write-host $updatePerm -ForegroundColor green
+
+write-host '$accessPerm			== ' -nonewline -ForegroundColor white
+write-host $accessPerm -ForegroundColor green
+
+write-host '$rebootPerm			== ' -nonewline -ForegroundColor white
+write-host $rebootPerm -ForegroundColor green
+
+write-host " "	
 write-host "Check Complete...." -ForegroundColor white
 write-host " "	
+}
+Function Check-Ports {
+<# 
+.DESCRIPTION 
+This function checks all the config files defined in ddc2_config.ps1 for port information and displays the ports in an easy to read manner.
+ 
+.EXAMPLE
+Check-Ports
+#>
+write-host " "
+write-host "Checking ports for DDC2-ID: $ServerID, installed in $currentDIR" -ForegroundColor white
+write-host " "
+if(test-path $DCS_Config) {
+	write-host "Port Configuration from - " -ForegroundColor white -nonewline
+	write-host "$DCS_Config" -ForegroundColor green
+	$DCS_PORT = ((Select-String -Path $DCS_Config -Pattern "port" | Out-String).Split(' ')[-1]).Split(',')[0]
+	write-host "	: port 				= "  -nonewline
+	write-host "$DCS_PORT" -ForegroundColor green
+} else {
+	write-host 'Port Configuration from - ' -ForegroundColor white -nonewline
+	write-host '$DCS_Config file path not found (check ddc2_config.ps1)' -ForegroundColor yellow
+}
+write-host " "
+if(test-path $SRS_AutoConnect) {
+	write-host "Port Configuration from - " -ForegroundColor white -nonewline
+	write-host "$SRS_AutoConnect" -ForegroundColor green
+	$SRS_SERVER_SRS_PORT = (Select-String -Path $SRS_AutoConnect -Pattern "SRSAuto.SERVER_SRS_PORT =" | Out-String).Split('"')[-2]
+	write-host "	: SRSAuto.SERVER_SRS_PORT	= "  -nonewline
+	write-host "$SRS_SERVER_SRS_PORT" -ForegroundColor green
+} else {
+	write-host 'Port Configuration from - ' -ForegroundColor white -nonewline
+	write-host '$SRS_AutoConnect file path not found (check ddc2_config.ps1)' -ForegroundColor yellow
+}
+write-host " "	
+if(test-path $SRS_Config) {
+	write-host "Port Configuration from - " -ForegroundColor white -nonewline
+	write-host "$SRS_Config" -ForegroundColor green
+	$SRS_SERVER_PORT = ((Select-String -Path $SRS_Config -Pattern "SERVER_PORT" | Out-String).Split('=')[1]).Trim()
+	write-host "	: SERVER_PORT			= "  -nonewline
+	write-host "$SRS_SERVER_PORT" -ForegroundColor green
+	$SRS_LOTATC_EXPORT_PORT = ((Select-String -Path $SRS_Config -Pattern "LOTATC_EXPORT_PORT" | Out-String).Split('=')[1]).Trim()
+	write-host "	: LOTATC_EXPORT_PORT		= "  -nonewline
+	write-host "$SRS_LOTATC_EXPORT_PORT" -ForegroundColor green
+} else {
+	write-host 'Port Configuration from - ' -ForegroundColor white -nonewline
+	write-host '$SRS_Config file path not found (check ddc2_config.ps1)' -ForegroundColor yellow
+}
+write-host " "	
+if(test-path $DCS_AutoE) {
+	write-host "Port Configuration from - " -ForegroundColor white -nonewline
+	write-host "$DCS_AutoE" -ForegroundColor green
+	$DCS_webgui_port = ((Select-String -Path $DCS_AutoE -Pattern "webgui_port " | Out-String).Split('=')[-1]).Trim()
+	write-host "	: webgui_port 			= "  -nonewline
+	write-host "$DCS_webgui_port" -ForegroundColor green
+} else {
+	write-host 'Port Configuration from - ' -ForegroundColor white -nonewline
+	write-host '$DCS_AutoE file path not found (check ddc2_config.ps1)' -ForegroundColor yellow
+	write-host "	: webgui_port 			= "  -nonewline
+	write-host "8088 (DEFAULT)" -ForegroundColor yellow
+	}
+write-host " "
+if(test-path $Lot_Config) {
+	write-host "Port Configuration from - " -ForegroundColor white -nonewline
+	write-host "$Lot_Config" -ForegroundColor green
+	$LotATC_port = ((Select-String -Path $Lot_Config -Pattern " port =" | Out-String).Split(' ')[-1] | Out-String).Split(',')[0]
+	write-host "	: port 				= "  -nonewline
+	write-host "$LotATC_port" -ForegroundColor green
+	$LotATC_srs_transponder_port = ((Select-String -Path $Lot_Config -Pattern " srs_transponder_port =" | Out-String).Split(' ')[-1] | Out-String).Split(',')[0]
+	write-host "	: srs_transponder_port 		= " -nonewline
+	write-host "$LotATC_srs_transponder_port" -ForegroundColor green
+	$LotATC_jsonserver_port = ((Select-String -Path $Lot_Config -Pattern " jsonserver_port =" | Out-String).Split(' ')[-1] | Out-String).Split(',')[0]
+	write-host "	: jsonserver_port 		= " -nonewline
+	write-host "$LotATC_jsonserver_port" -ForegroundColor green
+} else {
+	write-host 'Port Configuration from - ' -ForegroundColor white -nonewline
+	write-host '$Lot_Config file path not found (check ddc2_config.ps1)' -ForegroundColor yellow
+}
+write-host " "
+if(test-path $TACv_Config) {
+	write-host "Port Configuration from - " -ForegroundColor white -nonewline
+	write-host "$TACv_Config" -ForegroundColor green
+	$TACv_tacviewRealTimeTelemetryPort = (Select-String -Path $TACv_Config -Pattern "tacviewRealTimeTelemetryPort" | Out-String).Split('"')[-2]
+	write-host "	: tacviewRealTimeTelemetryPort	= "  -nonewline
+	write-host "$TACv_tacviewRealTimeTelemetryPort" -ForegroundColor green
+	$TACv_tacviewRemoteControlPort = (Select-String -Path $TACv_Config -Pattern "tacviewRemoteControlPort" | Out-String).Split('"')[-2]
+	write-host "	: tacviewRemoteControlPort 	= "  -nonewline
+	write-host "$TACv_tacviewRemoteControlPort" -ForegroundColor green
+} else {
+	write-host 'Port Configuration from - ' -ForegroundColor white -nonewline
+	write-host '$TACv_Config file path not found (check ddc2_config.ps1)' -ForegroundColor yellow
+}
 }
 Function Setup-Ports {
 Param (
@@ -386,14 +665,14 @@ write-log "Setup-Ports: STARTED" -silent
 if(test-path $DCS_Config) {
 	Set-Port -Search "[`"port`"]" -Port ($DCSPort+ 0) -File $DCS_Config
 } else {
-	write-log "$DCS_Config File not Found" -silent
+	write-log "$DCS_Config File not Found"
 }
 
 if(test-path $SRS_Config) {
 	Set-Port -Search "SERVER_PORT" -Port ($DCSPort + 1) -File $SRS_Config
 	Set-Port -Search "LOTATC_EXPORT_PORT" -Port ($DCSPort + 6) -File $SRS_Config
 } else {
-	write-log "$SRS_Config File not Found" -silent
+	write-log "$SRS_Config File not Found"
 }
 
 if(test-path $Lot_Config) {
@@ -401,14 +680,14 @@ if(test-path $Lot_Config) {
 	Set-Port -Search "srs_transponder_port" -Port ($DCSPort + 6) -File $Lot_Config
 	Set-Port -Search "jsonserver_port" -Port ($DCSPort + 8) -File $Lot_Config
 } else {
-	write-log "$Lot_Config File not Found" -silent
+	write-log "$Lot_Config File not Found"
 }
 
 if(test-path $TACv_Config) {
 	Set-Port -Search "[`"tacviewRealTimeTelemetryPort`"]" -Port ($DCSPort + 3) -File $TACv_Config
 	Set-Port -Search "[`"tacviewRemoteControlPort`"]" -Port ($DCSPort + 7) -File $TACv_Config
 } else {
-	write-log "$TACv_Config File not Found" -silent
+	write-log "$TACv_Config File not Found"
 }
 
 if(test-path $DCS_AutoE) {
@@ -424,10 +703,22 @@ if(test-path $SRS_AutoConnect) {
 }
 write-log "Setup-Ports: ENDED" -silent
 }
-
+Function Tail-DDC2 {
+gc $DDC2_LogFile -tail 10 -wait
+}
 ########################################################################################################################################################################################################
 #SERVER & FIREWALL CONTROL##############################################################################################################################################################################
 ########################################################################################################################################################################################################
+Function StringOutPorts {
+Param ($Id)
+$Netprocess = get-nettcpconnection -OwningProcess $Id -ErrorAction SilentlyContinue | Where-Object{$_.State -eq 'Listen'} | Select-Object localPort,State | Sort LocalPort
+$PortOut = ""
+Foreach($item in $Netprocess) {
+		$PortOut = $PortOut + $item.LocalPort
+		if($item -ne $Netprocess[-1]) {$PortOut = $PortOut + ", "}
+	}
+return $PortOut
+}
 Function Reboot-Server {
 	write-log -LogData "--------------------------------------------------------" -Silent
 	write-log -LogData "REBOOT STARTED..." -Silent
@@ -844,7 +1135,7 @@ Param (
 				$SplitStr = $Line.Split("=")[0]
 				$Line = "$SplitStr=$Port"
 			}
-			write-log "Line #$LineNumber Set To - $Line" -silent
+			write-log "Line #$LineNumber Set To - $Line"
 		}
 		$LineNumber = $LineNumber + 1
 		$NewContent += $Line
@@ -858,7 +1149,7 @@ if ($Found) {
 		write-log "$File UPDATED!!" -silent
 		$rtn = $true
 	} else { 
-		write-log "$Search was not found in $File" -silent
+		write-log "$Search was not found in $File"
 		$rtn = $false
 	}
 #return $rtn
@@ -867,183 +1158,7 @@ if ($Found) {
 ########################################################################################################################################################################################################
 #SERVER DATA COLLECTION#################################################################################################################################################################################
 ########################################################################################################################################################################################################
-Function Check-DDC2-PS {
-<# 
-.DESCRIPTION 
-This function checks that all the config files etc have been entered correctly into the DDC2 Powershell script
- 
-.EXAMPLE
-Check-DDC2-PS
-#>
-write-host "Reloading DDC2.ps1 file into memory"
-. .\DDC2.ps1
-write-host "Checking DDC2.ps1 admin entered file paths...." -ForegroundColor white
-write-log -LogData "Checking DDC2.ps1 admin entered file paths...." -silent
-####################################################################################################
-write-host '$PS_LogFile	== ' -nonewline -ForegroundColor white
-if (test-path $PS_LogFile) {
-	write-host "OK" -nonewline -ForegroundColor green
-	write-host " - $PS_LogFile" -ForegroundColor yellow
-	} else {write-host "Not Found" -ForegroundColor red}
-write-host '$VNC_Path	== ' -nonewline -ForegroundColor white
-if (test-path $VNC_Path) {
-	write-host "OK" -nonewline -ForegroundColor green
-	write-host " - $VNC_Path" -ForegroundColor yellow
-	} else {write-host "Not Found" -ForegroundColor red}	
-####################################################################################################
-write-host " "
-write-host "Checking all DCS Variables...." -ForegroundColor white
 
-write-host '$DCS_Profile 	== ' -nonewline -ForegroundColor white
-if (test-path $DCS_Profile) {
-	write-host "OK" -nonewline -ForegroundColor green
-	write-host " - $DCS_Profile" -ForegroundColor yellow
-	} else {write-host "Not Found" -ForegroundColor red}
-
-write-host '$DCS_Config 	== ' -nonewline -ForegroundColor white
-if (test-path $DCS_Config) {
-	write-host "OK" -nonewline -ForegroundColor green
-	write-host " - $DCS_Config" -ForegroundColor yellow
-	} else {write-host "Not Found" -ForegroundColor red}
-	
-write-host '$DCS_AutoE	== ' -nonewline -ForegroundColor white
-if (test-path $DCS_AutoE) {
-	write-host "OK" -nonewline -ForegroundColor green
-	write-host " - $DCS_AutoE" -ForegroundColor yellow
-	} else {write-host "Not Found" -ForegroundColor red}
-	
-write-host '$dcsDIR 	== ' -nonewline -ForegroundColor white
-if (test-path $dcsDIR) {
-	write-host "OK" -nonewline -ForegroundColor green
-	write-host " - $dcsDIR" -ForegroundColor yellow
-	} else {write-host "Not Found" -ForegroundColor red}
-
-write-host '$dcsBIN		== ' -nonewline -ForegroundColor white
-if (test-path $dcsBIN) {
-	write-host "OK" -nonewline -ForegroundColor green
-	write-host " - $dcsBIN" -ForegroundColor yellow
-	} else {write-host "Not Found" -ForegroundColor red}
-
-write-host '$dcsEXE 	== ' -nonewline -ForegroundColor white
-if (test-path $dcsEXE) {
-	write-host "OK" -nonewline -ForegroundColor green
-	write-host " - $dcsEXE" -ForegroundColor yellow
-	} else {write-host "Not Found" -ForegroundColor red}
-
-write-host '$DCS_Updater 	== ' -nonewline -ForegroundColor white
-if (test-path $DCS_Updater) {
-	write-host "OK" -nonewline -ForegroundColor green
-	write-host " - $DCS_Updater" -ForegroundColor yellow
-	} else {write-host "Not Found" -ForegroundColor red}
-#END DCS Variables
-####################################################################################################
-#Start SRS Variables
-write-host " "
-write-host "Checking all SRS Variables...." -ForegroundColor white
-
-write-host '$srsDIR 	== ' -nonewline -ForegroundColor white
-if (test-path $srsDIR) {
-	write-host "OK" -nonewline -ForegroundColor green
-	write-host " - $srsDIR" -ForegroundColor yellow
-	} else {write-host "Not Found" -ForegroundColor red}
-
-write-host '$srsEXE 	== ' -nonewline -ForegroundColor white
-if (test-path $srsEXE) {
-	write-host "OK" -nonewline -ForegroundColor green
-	write-host " - $srsEXE" -ForegroundColor yellow
-	} else {write-host "Not Found" -ForegroundColor red}
-	
-<#write-host '$SRS_Entry 	== ' -nonewline -ForegroundColor white
-if (test-path $SRS_Entry) {
-	write-host "OK" -nonewline -ForegroundColor green
-	write-host " - $SRS_Entry" -ForegroundColor yellow
-	} else {write-host "Not Found" -ForegroundColor red}
-#>	
-write-host '$SRS_Config 	== ' -nonewline -ForegroundColor white
-if (test-path $SRS_Config) {
-	write-host "OK" -nonewline -ForegroundColor green
-	write-host " - $SRS_Config" -ForegroundColor yellow
-	} else {write-host "Not Found" -ForegroundColor red}
-	
-write-host '$SRS_AutoConnect== ' -nonewline -ForegroundColor white
-if (test-path $SRS_AutoConnect) {
-	write-host "OK" -nonewline -ForegroundColor green
-	write-host " - $SRS_AutoConnect" -ForegroundColor yellow
-	} else {write-host "Not Found" -ForegroundColor red}
-	
-write-host '$SRS_Updater	== ' -nonewline -ForegroundColor white
-if (test-path $SRS_Updater) {
-	write-host "OK" -nonewline -ForegroundColor green
-	write-host " - $SRS_Updater" -ForegroundColor yellow
-	} else {write-host "Not Found" -ForegroundColor red}
-#END SRS Variables
-####################################################################################################
-#Start LotATC Variables
-write-host " "
-write-host "Checking all LotATC Variables...." -ForegroundColor white
-
-write-host '$LotDIR 	== ' -nonewline -ForegroundColor white
-if (test-path $LotDIR) {
-	write-host "OK" -nonewline -ForegroundColor green
-	write-host " - $LotDIR" -ForegroundColor yellow
-	} else {write-host "Not Found" -ForegroundColor red}
-
-write-host '$Lot_Entry 	== ' -nonewline -ForegroundColor white
-if (test-path $Lot_Entry) {
-	write-host "OK" -nonewline -ForegroundColor green
-	write-host " - $Lot_Entry" -ForegroundColor yellow
-	} else {write-host "Not Found" -ForegroundColor red}
-	
-write-host '$Lot_Config 	== ' -nonewline -ForegroundColor white
-if (test-path $Lot_Config) {
-	write-host "OK" -nonewline -ForegroundColor green
-	write-host " - $Lot_Config" -ForegroundColor yellow
-	} else {write-host "Not Found" -ForegroundColor red}
-	
-write-host '$Lot_Updater 	== ' -nonewline -ForegroundColor white
-if (test-path $Lot_Updater) {
-	write-host "OK" -nonewline -ForegroundColor green
-	write-host " - $Lot_Updater" -ForegroundColor yellow
-	} else {write-host "Not Found" -ForegroundColor red}
-	
-write-host '$LotDIR 	== ' -nonewline -ForegroundColor white
-if (test-path $LotDIR) {
-	write-host "OK" -nonewline -ForegroundColor green
-	write-host " - $LotDIR" -ForegroundColor yellow
-	} else {write-host "Not Found" -ForegroundColor red}
-#END LotATC Variables
-####################################################################################################
-#Start TACView Variables
-write-host " "
-write-host "Checking all TACView Variables...." -ForegroundColor white
-
-write-host '$TacvDIR 	== ' -nonewline -ForegroundColor white
-if (test-path $TacvDIR) {
-	write-host "OK" -nonewline -ForegroundColor green
-	write-host " - $TacvDIR" -ForegroundColor yellow
-	} else {write-host "Not Found" -ForegroundColor red}
-
-write-host '$TacvEXE 	== ' -nonewline -ForegroundColor white
-if (test-path $TacvEXE) {
-	write-host "OK" -nonewline -ForegroundColor green
-	write-host " - $TacvEXE" -ForegroundColor yellow
-	} else {write-host "Not Found" -ForegroundColor red}
-
-write-host '$TACv_Entry 	== ' -nonewline -ForegroundColor white
-if (test-path $TACv_Entry) {
-	write-host "OK" -nonewline -ForegroundColor green
-	write-host " - $TACv_Entry" -ForegroundColor yellow
-	} else {write-host "Not Found" -ForegroundColor red}
-	
-write-host '$TACv_Config 	== ' -nonewline -ForegroundColor white
-if (test-path $TACv_Config) {
-	write-host "OK" -nonewline -ForegroundColor green
-	write-host " - $TACv_Config" -ForegroundColor yellow
-	} else {write-host "Not Found" -ForegroundColor red}
-write-host " "
-write-host "Check Complete...." -ForegroundColor white
-write-host " "	
-}
 Function Get-ServerInfo {
 	##COLLECTION OF SERVER INFO
 	$system = Get-CimInstance -Class Win32_OperatingSystem
@@ -1100,6 +1215,7 @@ Function Get-ServerInfo {
 	$Get_ServerInfo | Add-Member -MemberType NoteProperty -Name CPUCores -Value $Processor.NumberOfLogicalProcessors
 	$Get_ServerInfo | Add-Member -MemberType NoteProperty -Name TotalMem -Value $TotalMemGB
 	$Get_ServerInfo | Add-Member -MemberType NoteProperty -Name ServerID -Value $ServerID					#Item Pulled from ddc2_config.ps1
+	$Get_ServerInfo | Add-Member -MemberType NoteProperty -Name CommandPrefix -Value $DDC2_CommandPrefix	#Item Pulled from ddc2_config.ps1
 	$Get_ServerInfo | Add-Member -MemberType NoteProperty -Name DDC2_PSCore -Value $DDC2_PSCore_Version		#Item Pulled from ddc2.ps1
 	$Get_ServerInfo | Add-Member -MemberType NoteProperty -Name DDC2_PSConfig -Value $DDC2_PSConfig_Version	#Item Pulled from ddc2_config.ps1
 	$Get_ServerInfo | Add-Member -MemberType NoteProperty -Name DDC2_Path -Value $DDC2DIR					#Item Pulled from ddc2.ps1 during command execution (ddc2 script argument)
@@ -1115,6 +1231,11 @@ Function Get-ServerInfo {
 	$Get_ServerInfo | Add-Member -MemberType NoteProperty -Name AccessLoop -Value $ACCESS_LOOP_DELAY		#Item Pulled from ddc2_config.ps1
 	$Get_ServerInfo | Add-Member -MemberType NoteProperty -Name UpdateLoop -Value $UPDATE_LOOP_DELAY		#Item Pulled from ddc2_config.ps1	
 	$Get_ServerInfo | Add-Member -MemberType NoteProperty -Name PwdRandomizer -Value $PwdRandomizer			#Item Pulled from ddc2_config.ps1	
+	$Get_ServerInfo | Add-Member -MemberType NoteProperty -Name AutoStartonUpdate -Value $AutoStartonUpdate	#Item Pulled from ddc2_config.ps1
+	$Get_ServerInfo | Add-Member -MemberType NoteProperty -Name AutoUpdateDCS -Value $UPDATE_DCS			#Item Pulled from ddc2_config.ps1
+	$Get_ServerInfo | Add-Member -MemberType NoteProperty -Name AutoUpdateSRS -Value $UPDATE_SRS			#Item Pulled from ddc2_config.ps1
+	$Get_ServerInfo | Add-Member -MemberType NoteProperty -Name AutoUpdateLoT -Value $UPDATE_LoT			#Item Pulled from ddc2_config.ps1
+	$Get_ServerInfo | Add-Member -MemberType NoteProperty -Name AutoUpdateMoose -Value $UPDATE_MOOSE		#Item Pulled from ddc2_config.ps1
 	$Get_ServerInfo | Add-Member -MemberType NoteProperty -Name LoTBETA -Value $LoTBETA						#Item Pulled from ddc2_config.ps1
 	$Get_ServerInfo | Add-Member -MemberType NoteProperty -Name LotBuild -Value $Lot_Release				#Item Pulled from ddc2_config.ps1
 	$Get_ServerInfo | Add-Member -MemberType NoteProperty -Name SRSBETA -Value $SRSBETA						#Item Pulled from ddc2_config.ps1	
@@ -1576,8 +1697,8 @@ $ServerStatus | Add-Member -MemberType NoteProperty -Name LastBootUpString -Valu
 $check = 0
 $contLoop = $true
 while ($contLoop) {
-	#ED Broke the -w command $DCS = Get-Process -ErrorAction SilentlyContinue | where {$_.MainWindowTitle -eq $DCS_WindowTitle -and $_.Path -eq $dcsEXE} | select $ProcessSelection
-	$DCS = Get-Process -ErrorAction SilentlyContinue | where {$_.CommandLine -match "-w $DCS_WindowTitle" -and $_.Path -eq $dcsEXE} | select $ProcessSelection
+	$DCS = Get-Process -ErrorAction SilentlyContinue | where {$_.MainWindowTitle -eq $DCS_WindowTitle -and $_.Path -eq $dcsEXE} | select $ProcessSelection
+	#$DCS = Get-Process -ErrorAction SilentlyContinue | where {$_.CommandLine -match "-w $DCS_WindowTitle" -and $_.Path -eq $dcsEXE} | select $ProcessSelection
 	if($DCS.count -gt 0) {
 		if($DCS.Responding) {
 			write-log -LogData "DCS is Responding" -Silent
@@ -1977,12 +2098,107 @@ Function Update-DCS {
 	#write-log -LogData "'Enter' pressed on 'DCS Updater' window" -Silent
 	write-log -LogData "DCS Update Process - JOB DONE!" -Silent
 }
+Function Find-Link {
+<#
+This function will get a websites data and output a single link for download
+
+e.g. Find-Link -URI "https://github.com/FlightControl-Master/MOOSE/releases/latest" -Search '/moose.lua'
+
+Will return the first value it finds only
+#>
+Param (
+[Parameter(Mandatory=$true)]$URI,
+[Parameter(Mandatory=$true)]$Search
+)
+$webpage = Invoke-WebRequest -Uri $URI
+$URISplit = $URI.Split('/')
+$rootDomain = $URISplit[0]+'//'+$URISplit[2]  #Gets Website root for any HREF
+$LinkPath = (($webpage.Links.href) -match '/Moose.lua')[0]
+if($LinkPath.Count -ne 0) {$rtn = $rootDomain + $LinkPath} else {$rtn = $false}
+return $rtn
+}
+Function Update-MOOSE {
+write-log -LogData "Starting MOOSE Update Process..." -Silent
+	if(test-path $MOOSE_Path) {
+	$Go4MOOSEUpdate = $false
+	$WebClient = New-Object System.Net.WebClient
+	$DLFile = "new_moose.lua"
+	$DLPath = "$DDC2DIR\Downloads\MOOSE.LUA"
+	$MOOSE_ArchiveROOT = "$DDC2DIR\Archive\MOOSE.LUA"
+	$MOOSE_Leaf = (split-path $MOOSE_Path -leaf)
+	$DwnLd = Find-Link -URI "https://github.com/FlightControl-Master/MOOSE/releases/latest" -Search '/moose.lua'
+	write-log -LogData "Preparing to download $DwnLd" -silent
+		if(test-path $DLPath) {
+			write-log -LogData "Downloading..." -silent
+			$shhh = $WebClient.DownloadFile("$DwnLd","$DLPath\$DLFile")
+		} else {
+			write-log -LogData "$DLPath does not exist, creating folder" -silent
+			$shhh = New-Item -Type Directory -Path $DLPath -Force
+			if(test-path $DLPath) {
+				write-log -LogData "Directory Created" -silent
+				write-log -LogData "Downloading..." -silent
+				$shhh = $WebClient.DownloadFile("$DwnLd","$DLPath\$DLFile")
+			} else {
+				write-log -LogData "ERROR!!! - Directory was not created check paths in ddc2_config.ps1 and file permissions" -silent
+			}
+		}
+		if(test-path "$DLPath\$DLFile") {
+			write-log -LogData "Download Complete" -silent
+			$NewFileHASH = (Get-FileHash "$DLPath\$DLFile").Hash
+			$CurrentFileHASH = (Get-FileHash "$MOOSE_Path").Hash
+			if($NewFileHASH -eq $CurrentFileHASH) {
+				write-log -LogData "Moose.lua is already the latest version, no update required..." -silent
+				$Go4MOOSEUpdate = $false
+			} else {
+				$Go4MOOSEUpdate = $true
+			}
+		} else {
+			$Go4MOOSEUpdate = $false
+			write-log -LogData "Update-MOOSE: Download Failed, please check internet connection and DNS" -silent
+		}
+		if (-not (test-path $MOOSE_ArchiveROOT)) {
+			write-log -LogData "$MOOSE_ArchiveROOT does not exist, creating folder" -silent			
+			$shhh = New-Item -Type Directory -Path $MOOSE_ArchiveROOT -Force
+			if(test-path $MOOSE_ArchiveROOT) {
+				write-log -LogData "Directory Created" -silent
+			} else {
+				$Go4MOOSEUpdate = $false
+				write-log -LogData "ERROR!!! - Can't create directory: was not created check MOOSE_path in ddc2_config.ps1 and file permissions for $MOOSE_ArchiveROOT" -silent
+			}
+		}
+		if($Go4MOOSEUpdate) {
+			write-log -LogData "Moose.lua is out of date, updating..." -silent
+			[string]$TimeStr = get-date -Format "yyyy-MM-dd--HHmmss"
+			$ArchiveFilePath = $MOOSE_ArchiveROOT+"\"+$TimeStr+"_"+$MOOSE_Leaf
+			$shhh = Copy-Item "$MOOSE_Path" $ArchiveFilePath -Force
+			if(test-path $ArchiveFilePath) {
+				$ArchivedFileHASH = (Get-FileHash $ArchiveFilePath).Hash
+				if($ArchivedFileHASH -eq $CurrentFileHASH) {
+					write-log -LogData "Archiving Complete: $ArchiveFilePath" -silent
+					$shhh = Copy-Item "$DLPath\$DLFile" "$MOOSE_Path" -Force
+					$CurrentFileHASH = (Get-FileHash "$MOOSE_Path").Hash
+						if($NewFileHASH -eq $CurrentFileHASH) {
+							write-log -LogData "Update-MOOSE: MOOSE Update Complete" -silent
+						} else {
+							write-log -LogData "Update-MOOSE: New File hasg mismatch compared to downloaded file, update aborted..." -silent
+						}
+				} else {
+					write-log -LogData "Archiving Failed due to file hash mismatch, update aborted..." -silent
+				}			
+			} else {
+				write-log -LogData "Update-MOOSE: was unable to backup a copy of your current Moose.lua, update aborted..." -silent
+			}
+		}
+	} else {
+		write-log -LogData "Update-MOOSE: $MOOSE_Path not found, update aborted..." -silent
+	}
+}
 Function Update-Server {
 $DoUpdate = $true
 $ServerStatus = $null
 
-#ED Broke the -w command $DCS = Get-Process -ErrorAction SilentlyContinue | where {$_.MainWindowTitle -eq $DCS_WindowTitle -and $_.Path -eq $dcsEXE} | select $ProcessSelection
-$DCS = Get-Process -ErrorAction SilentlyContinue | where {$_.CommandLine -match "-w $DCS_WindowTitle" -and $_.Path -eq $dcsEXE} | select $ProcessSelection
+$DCS = Get-Process -ErrorAction SilentlyContinue | where {$_.MainWindowTitle -eq $DCS_WindowTitle -and $_.Path -eq $dcsEXE} | select $ProcessSelection
+#$DCS = Get-Process -ErrorAction SilentlyContinue | where {$_.CommandLine -match "-w $DCS_WindowTitle" -and $_.Path -eq $dcsEXE} | select $ProcessSelection
 	if($DCS.count -ne 0) {
 	$DoUpdate = $false
 	}
@@ -2017,6 +2233,13 @@ Function Do-Update {
 	#STOP DCS
 	write-log -LogData "UPDATE DCS: Call Stop-DCS" -Silent
 	Stop-DCS
+	if ($UPDATE_MOOSE) {
+		write-log -LogData "UPDATE DCS: Call Update MOOSE" -Silent
+		Update-MOOSE
+		}
+	else {
+		write-log -LogData "UPDATE DCS: MOOSE autoupdate skipped due to UPDATE_MOOSE variable being set to false." -Silent
+		}
 	if ($UPDATE_LoT) {
 		write-log -LogData "UPDATE DCS: Call Update LotATC" -Silent
 		Update-LotATC
@@ -2042,7 +2265,7 @@ Function Do-Update {
 	
 	if ($AutoStartonUpdate) {
 		write-log -LogData "UPDATE DCS: Call Restart-DCS" -Silent
-		Restart-DCS
+		Start-DCS
 		}
 	else {
 		write-log -LogData "UPDATE DCS: Restart-DCS Disabled in ddc2_config.ps1, DCS not restarted" -Silent
@@ -2065,8 +2288,8 @@ write-log -LogData "Restart-DCS: ENDED" -Silent
 Function Start-DCS {
 $Running = $false	
 $Updating = $false	
-#ED Broke the -w command $DCS = Get-Process -ErrorAction SilentlyContinue | where {$_.MainWindowTitle -eq $DCS_WindowTitle -and $_.Path -eq $dcsEXE} | select $ProcessSelection
-$DCS = Get-Process -ErrorAction SilentlyContinue | where {$_.CommandLine -match "-w $DCS_WindowTitle" -and $_.Path -eq $dcsEXE} | select $ProcessSelection	
+$DCS = Get-Process -ErrorAction SilentlyContinue | where {$_.MainWindowTitle -eq $DCS_WindowTitle -and $_.Path -eq $dcsEXE} | select $ProcessSelection
+#$DCS = Get-Process -ErrorAction SilentlyContinue | where {$_.CommandLine -match "-w $DCS_WindowTitle" -and $_.Path -eq $dcsEXE} | select $ProcessSelection	
 	if($DCS.count -ne 0) {
 		$Running = $true
 	}
@@ -2097,18 +2320,18 @@ $LoT_Upd = Get-Process -ErrorAction SilentlyContinue | where {$_.Path -eq $LoT_U
 		$checkLoop = 0
 		$sleepTime = 0
 		$contLoop = $true
-		$DCS = Get-Process -ErrorAction SilentlyContinue | where {$_.CommandLine -match "-w $DCS_WindowTitle" -and $_.Path -eq $dcsEXE} | select $ProcessSelection
 		while ($contLoop) {
+		$DCS = Get-Process -ErrorAction SilentlyContinue | where {$_.MainWindowTitle -eq $DCS_WindowTitle -and $_.Path -eq $dcsEXE} | select $ProcessSelection
 		Start-sleep 1;
 		$sleepTime = $sleepTime + 1
-		#ED Broke the -w command $DCS = Get-Process -ErrorAction SilentlyContinue | where {$_.MainWindowTitle -eq $DCS_WindowTitle -and $_.Path -eq $dcsEXE} | select $ProcessSelection
-		$DCS_Check = Get-Process -ErrorAction SilentlyContinue | where {$_.Id -eq $DCS.Id} | select $ProcessSelection
-		if($DCS_Check.count -gt 0) {
-			if($DCS_Check.Responding) {
+		if($DCS.count -gt 0) {
+			if($DCS.Responding) {
 				$checkLoop = $checkLoop + 1
 			} else {
-				write-log -LogData "DCS stopped Responding, resetting DCS Response Check to 0" -Silent
-				$checkLoop = 0
+				if($checkLoop -ne 0) {
+					write-log -LogData "DCS stopped Responding, resetting DCS Response Check to 0" -Silent
+					$checkLoop = 0
+				}
 			}
 		}
 		if($sleepTime -eq 4) {
@@ -2117,18 +2340,14 @@ $LoT_Upd = Get-Process -ErrorAction SilentlyContinue | where {$_.Path -eq $LoT_U
 			write-log -LogData "Setting Priority for SRS" -Silent
 			$shh = Get-CimInstance -ClassName win32_process -Filter 'name = "SR-Server.exe"' | Invoke-CimMethod -MethodName SetPriority -Arguments $PriorityArray
 		}
-<# 		if($sleepTime -eq 6) {
-		write-log -LogData "Shaping and Moving DCS Window" -Silent
-		Set-Window -ProcessName DCS -ProcessID $DCS.id  -x 150 -y 25 -Width 160 -Height 120
-		write-log -LogData "Moving SRS Window" -Silent
-		Set-Window -ProcessName SR-Server -ProcessID $SRS.id -x 305 -y 25	
-		}	 #>	
 		
 		if($checkLoop -ge 10 -and $checkLoop -ne 0) {
 			write-log -LogData "DCS Response Check - $checkLoop / 10 consecutive checks" -Silent
 			write-log -LogData "DCS Response Check Loop Finished" -Silent
 			$contLoop = $false
-		} else {write-log -LogData "DCS Response Check - $checkLoop / 10 consecutive checks" -Silent}
+		} else {
+			if($checkLoop -ne 0) {write-log -LogData "DCS Response Check - $checkLoop / 10 consecutive checks" -Silent}
+			}
 		}
 		Start-sleep 10;
 		Set-Window -ProcessName DCS -ProcessID $DCS.id  -x 150 -y 25 -Width 160 -Height 120
@@ -2154,8 +2373,8 @@ param(
 }
 Function Stop-DCS {
 	write-log -LogData "Stop-DCS: STARTED" -Silent
-	#ED Broke the -w command $DCS = Get-Process -ErrorAction SilentlyContinue | where {$_.MainWindowTitle -eq $DCS_WindowTitle -and $_.Path -eq $dcsEXE} | select $ProcessSelection
-	$DCS = Get-Process -ErrorAction SilentlyContinue | where {$_.CommandLine -match "-w $DCS_WindowTitle" -and $_.Path -eq $dcsEXE} | select $ProcessSelection
+	$DCS = Get-Process -ErrorAction SilentlyContinue | where {$_.MainWindowTitle -eq $DCS_WindowTitle -and $_.Path -eq $dcsEXE} | select $ProcessSelection
+	#$DCS = Get-Process -ErrorAction SilentlyContinue | where {$_.CommandLine -match "-w $DCS_WindowTitle" -and $_.Path -eq $dcsEXE} | select $ProcessSelection
 	write-log -LogData 'FORCE Stopping DCS...' -Silent
 	$DCS | stop-process -Force
 	write-log -LogData "Stop-DCS: ENDED" -Silent
@@ -2252,9 +2471,10 @@ if ($Update) {
 	$DCSreturn = get-status
 	}
 if ($DoUpdate) {
-	Do-Update
+	$DCS = Get-Process -ErrorAction SilentlyContinue | where {$_.Path -eq $dcsEXE} | select $ProcessSelection
+	if($DCS.Count -eq 0) {Do-Update}
 	$DCSreturn = get-status
-	}
+}
 If ($Status) {
 	$DCSreturn = get-status
 	}
