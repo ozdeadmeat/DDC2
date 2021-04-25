@@ -1,12 +1,13 @@
 <#
 DCS Controller Script for Node-Red & Discord Interaction
-# Version 2.0c
+# Version 2.0d
 # Writen by OzDeaDMeaT
-# 23-04-2021
+# 25-04-2021
 ####################################################################################################
 #CHANGE LOG#########################################################################################
 ####################################################################################################
 - Removed ED Bug -w DCS.exe process work around, response performance improved
+- Fixed Issue with Restart-DCS Function causing DCS not to restart correctly
 - Fixed Bug were !status command would overwrite Application Versions with Empty Strings (!version command was showing empty values for application versions)
 - Fixed Start Loop error causing start command powershell to never complete.
 - Added - Ability to change Command Prefix from !
@@ -2280,7 +2281,7 @@ Function Do-Update {
 Function Restart-DCS {
 write-log -LogData "Restart-DCS: STARTED" -Silent
 write-log -LogData "Restart-DCS: Calling Stop-DCS" -Silent
-	Stop-DCS
+	Stop -Game
 write-log -LogData "Restart-DCS: Calling Start-DCS" -Silent	
 	Start-DCS
 write-log -LogData "Restart-DCS: ENDED" -Silent
