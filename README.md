@@ -1,7 +1,7 @@
 # DDC2
-## Discord to DCS Command and Control 2.0c Release##
+## Discord to DCS Command and Control 2.0d (Restart Command Hotfix) Release##
 
-NOTE: This version is now feature complete.
+NOTE: Only ddc2.ps1 file was updated in this hotfix release, no need to update ddc2_config.ps1 or Node-Red Flow
 
 New Instructions:
 
