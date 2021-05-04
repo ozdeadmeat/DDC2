@@ -1,11 +1,16 @@
 <#
 Discord to DCS Command & Control Settings Script
-# Version 2.0c
+# Version 2.0j
 # Writen by OzDeaDMeaT
-# 23-04-2021
+# 04-05-2021
 ########################################################################################################################################################################################################
 #CHANGE LOG#############################################################################################################################################################################################
 ########################################################################################################################################################################################################
+- v2.0j Added $DesktopLocation
+- v2.0j Added $DesktopLocation
+- v2.0i Added $SERVER_PRIORITY
+- v2.0i Added $DCS_SERVERSTART
+- v2.0e Added $DDC2_MASTER, $AUTOSTART_DCS_WAIT, $srsCLIENTSFile, $srsCONFIGFile
 - v2.0c Added Moose.lua Path and $UPDATE_MOOSE variable for automated Moose.lua updates if your server keeps moose.lua external to your mission files
 
 ########################################################################################################################################################################################################
@@ -18,7 +23,8 @@ $VNC_Path			= "PATH DATA OPTIONAL"										#Path to VNC Server EXE
 $DCS_Profile 		= "PATH DATA REQUIRED" 									#DCS Server Profile Path
 $dcsDIR 			= "PATH DATA REQUIRED"			 												#DCS Install Location
 $srsDIR 			= "PATH DATA OPTIONAL" 												#SRS Installation Location
-$srsClients			= "$srsDIR\clients-list.json"																#Clients Data Export for SRS. User Count and Names used for Server Status messages. if you do not wish to use this feature enter a file that does not exist and it will skip this part of the status report
+$srsCONFIGFile		= "SRS CONFIG FILENAME"																			#SRS DCS Config File (File Name and extension Only)
+$srsCLIENTSFile		= "SRS CLIENT JSON FILENAME"																			#Clients Data Export for SRS (File Name and extension Only)
 $LotDIR 			= "PATH DATA OPTIONAL" 																	#LotATC Installation Location
 $Lot_Config 		= "$DCS_Profile\Mods\services\LotAtc\config.custom.lua"										#LotATC Custom Config File
 $TacvDIR 			= "PATH DATA OPTIONAL" 																	#Tacview Installation Location
@@ -67,15 +73,27 @@ $SRS_DefaultCoal = 0		#Default Coalition recieving the Text to Speech Radio Mess
 ########################################################################################################################################################################################################
 #DDC2 CONFIGURATION SECTION#############################################################################################################################################################################
 ########################################################################################################################################################################################################
-$DDC2_HELP			= $TRUE																						#This will enable !help responses from this server (recommended to only have one server respond to !help requests if you have multiple servers monitoring a channel)
-$DCSBETA 			= $FALSE																						#Set this variable if you wish to use the DCS Open Beta 
-$SRSBETA 			= $FALSE																					#Set this variable if you wish to use the SRS Beta 
-$LoTBETA 			= $FALSE																					#Not currently in use
+#DDC2 Master Server Settings
+$DDC2_MASTER		= $TRUE																						#This tells this instance of DDC2 that it is the Primary DCS Instance on this Server, This means that all updates for these paths are managed from this instance. All other servers using the same SRS and DCS paths should be set to $FALSE
+$AUTOSTART_UPDATE	= $TRUE																						# Will automatically start the update of the server
+$AutoStartonUpdate	= $TRUE																						#Auto Restarts the DCS Server after updates are complete. (Default: $TRUE)
 $UPDATE_DCS			= $TRUE																						#Enables and disables the automated update process for DCS
 $UPDATE_SRS			= $TRUE																						#Enables and disables the automated update process for SRS
 $UPDATE_LoT			= $TRUE																						#Enables and disables the automated update process for LotATC
 $UPDATE_MOOSE		= $FALSE																						#Enables and disables the automated update process for Moose.lua
-$AutoStartonUpdate	= $TRUE																						#AutoRestarts the DCS Server after updates are complete. (Default: $TRUE)
+$DCSBETA 			= $FALSE																					#Set this variable if you wish to use the DCS Open Beta 
+$SRSBETA 			= $FALSE																					#Set this variable if you wish to use the SRS Beta 
+$LoTBETA 			= $FALSE																					#Not currently in use
+#DDC2 Subordinate Server Settings
+$AUTOSTART_DCS_WAIT	= 60																						#This setting is for instances with $DDC2_MASTER set to $FALSE. This number should be different per instance, check how one of your instances takes to completely Autostart and then wait make sure each server has a gap of atleast this amount of time before starting DCS. e.g. if your server takes 60 seconds to initialize, for instance 2 leave it at 60 seconds, but for instance 3 you would set this variable to 120 seconds.
+$AUTOSTART_DCS		= $TRUE																						#Tells the instance to Start DCS in the event that AUTOSTART_UPDATE is disabled
+$DCS_SERVERSTART	= 60																						#The amount of time the server will wait before attempting to check if DCS is responding (used for Start Command, 3.5Ghz CPU takes approximately 40 seconds running DCS Server 2.7.
+$SERVER_PRIORITY	= "AboveNormal"																				#Sets the Server Process Priorities. Valid options are "Idle", "BelowNormal", "Normal", "AboveNormal", "HighPriority", "AboveNormal"
+
+$DesktopLocation	= 1																							#Changes the location the windows are placed when the server (only 0 - 4 are supported, designed for 1920x1080 resolution)
+
+$DDC2_HELP			= $TRUE																						#This will enable !help responses from this server (recommended to only have one server respond to !help requests if you have multiple servers monitoring a channel)
+
 $SHOW_BLUPWD		= $TRUE																						#Set this to false if you do not want passwords published by DDC2 in non Admin Channels
 $SHOW_REDPWD		= $TRUE																						#Set this to false if you do not want passwords published by DDC2 in non Admin Channels
 $SHOW_SRVPWD		= $TRUE																						#Set this to false if you do not want passwords published by DDC2 in non Admin Channels
@@ -119,7 +137,10 @@ $Lot_Updater_Args 	= "-c up"																					#LotATC Updater Arguments
 
 $srsEXE 			= "$srsDIR\SR-Server.exe" 																	#SRS Executable
 $SRS_Entry 			= "$DCS_Profile\Mods\services\DCS-SRS\entry.lua"											#SRS DCS Entry Data
-$SRS_Config 		= "$srsDIR\server.cfg"																		#SRS DCS Config File
+$SRS_Config 		= "$srsDIR\$srsCONFIGFile"																	#SRS DCS Config File & Path
+$SRS_Clients		= "$srsDIR\$srsCLIENTSFile"																	#Clients Data Export File & Path
+$SRSargs 			= "-cfg=`"$srsCONFIGFile`""																	#DCS Server Arguments
+#$SRSargs 			= "-cfg=`"$SRS_Config`""																	#DCS Server Arguments
 $SRS_AutoConnect	= "$DCS_Profile\Scripts\Hooks\DCS-SRS-AutoConnectGameGUI.lua"								#SRS AutoConnect File
 $SRS_External		= "$srsDIR\DCS-SR-ExternalAudio.exe"														#SRS External TXT to Speech exe
 $SRS_Updater 		= "$srsDIR\SRS-AutoUpdater.exe"																#SRS Updater Executable
@@ -166,6 +187,17 @@ $updatePerm		= @($AdminGrp)										#Admins ONLY			6
 $accessPerm 	= @($AdminGrp)										#Admins ONLY			7
 $rebootPerm		= @($AdminGrp)										#Admins ONLY			8
 
+#The line below disables reboot and update permissions if server is not Master Instance
+if(-not $DDC2_MASTER) {
+	$rebootPerm		= @()
+	$updatePerm		= @()
+	$AUTOSTART_UPDATE = $FALSE
+	$AutoStartonUpdate = $FALSE
+	$UPDATE_DCS = $FALSE
+	$UPDATE_SRS	= $FALSE
+	$UPDATE_LoT	= $FALSE
+	$UPDATE_MOOSE = $FALSE
+}
 #####################################################################################################################################################################################################################
 ### DONT EDIT BELOW THIS LINE ### DONT EDIT BELOW THIS LINE ### DONT EDIT BELOW THIS LINE ### DONT EDIT BELOW THIS LINE ### DONT EDIT BELOW THIS LINE ### DONT EDIT BELOW THIS LINE ### DONT EDIT BELOW THIS LINE ###
 #####################################################################################################################################################################################################################
@@ -220,4 +252,21 @@ $CMDPerms | Add-Member -MemberType NoteProperty -Name reboot -Value $rebootPerm
 $CMDPerms | Add-Member -MemberType NoteProperty -Name radio -Value $radioPerm
 
 ########################################################################################################################################################################################################
-$DDC2_PSConfig_Version = "v2.0c"
+#Instance Window Positions
+#Does the Initial Position to setup the Array
+$PosArray = @(
+[pscustomobject]@{`
+POSid = 0;`
+SRS_X = 4;`
+SRS_Y = 170;`
+DCS_X = 4;`
+DCS_Y = 10;`
+DCS_SizeX = 336;`
+DCS_SizeY = 160}
+)
+$PosArray = Add-Position -POSid 1 -SRS_X 340 -SRS_Y 170 -DCS_X 340 -DCS_Y 10 -DCS_SizeX 336 -DCS_SizeY 160
+$PosArray = Add-Position -POSid 2 -SRS_X 676 -SRS_Y 170 -DCS_X 676 -DCS_Y 10 -DCS_SizeX 336 -DCS_SizeY 160
+$PosArray = Add-Position -POSid 3 -SRS_X 1012 -SRS_Y 170 -DCS_X 1012 -DCS_Y 10 -DCS_SizeX 336 -DCS_SizeY 160
+$PosArray = Add-Position -POSid 4 -SRS_X 1348 -SRS_Y 170 -DCS_X 1348 -DCS_Y 10 -DCS_SizeX 336 -DCS_SizeY 160
+########################################################################################################################################################################################################
+$DDC2_PSConfig_Version = "v2.0j"
