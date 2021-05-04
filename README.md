@@ -1,5 +1,5 @@
 # DDC2
-## Discord to DCS Command and Control 2.0d (Restart Command Hotfix) Release##
+## Discord to DCS Command and Control 2.0j Stable Release##
 
 NOTE: Only ddc2.ps1 file was updated in this hotfix release, no need to update ddc2_config.ps1 or Node-Red Flow
 
@@ -12,7 +12,7 @@ iex "& { $(irm https://aka.ms/install-powershell.ps1) } -UseMSI"
 
 In the Exec Node make sure you add the additionalparameter to point to the DDC2 Folder (Extra Input Parameters)
 
--DDC2DIR "<YourDDC2InstanceLocation"
+-DDC2DIR "YourDDC2InstanceLocation"
 
 All config is now located in ddc2_config.ps1 and that file MUST be co-located with the ddc2.ps1 file.
 Node-Red only requires the Exec Node to be updated and should work once correctly updated.
