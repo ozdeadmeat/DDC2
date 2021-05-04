@@ -1,26 +1,28 @@
 <#
 DCS Controller Script for Node-Red & Discord Interaction
-# Version 2.0d
+# Version 2.0j
 # Writen by OzDeaDMeaT
-# 25-04-2021
+# 03-05-2021
 ####################################################################################################
 #CHANGE LOG#########################################################################################
 ####################################################################################################
-- Removed ED Bug -w DCS.exe process work around, response performance improved
-- Fixed Issue with Restart-DCS Function causing DCS not to restart correctly
-- Fixed Bug were !status command would overwrite Application Versions with Empty Strings (!version command was showing empty values for application versions)
-- Fixed Start Loop error causing start command powershell to never complete.
-- Added - Ability to change Command Prefix from !
-- Reduced log spam produced by start function
-- Added more DDC2 Config data into Get-ServerInfo function
-- Added Console returns for setup-ports and set-port functions
-- Added more detail to Check-DDC2 console output
-- Added Check-Ports to output ports configured in the config files DDC2 are configured for and outputs to console output
-
+- v2.0j Added DDC2-AutoStart
+- v2.0j Added Add-Position
+- v2.0j Added Set-Position
+- v2.0j Updated Set-Window
+- v2.0j Updated UPDATE-MOOSE
+- v2.0i Changed PwdRandomizer to distinguish between SRS and DCS so PwdRandomizer could be called directly from application specific Start Command (start-dcs, start-srs)
+- v2.0i Added Start-Server
+- v2.0i Added Set-Priority
+- v2.0i Added Wait-For-Response
+- v2.0f Fixed Stop-SRS from closing all instances of SRS
+- v2.0f Re-purposed Start-DCS
+- v2.0f Added Start-SRS
 ####################################################################################################
 #>
 param(
 [switch]$init,
+[switch]$AutoStart,
 [switch]$Refresh,
 [switch]$Radio,
 [switch]$Update,
@@ -34,7 +36,6 @@ param(
 [switch]$StopUpdate,
 [switch]$Restart,
 [switch]$Reboot,
-[switch]$Report,
 [switch]$Secure,
 [switch]$Access,
 [switch]$VNC,
@@ -68,7 +69,7 @@ $DCSreturn 			= $null
 $DCSreturnJSON 		= $null
 $selection 			= 'Name', 'id', 'ProcessName', 'PriorityClass', 'ProductVersion', 'Responding', 'StartTime', @{Name='Ticks';Expression={$_.TotalProcessorTime.Ticks}}, @{Name='MemGB';Expression={'{00:N2}' -f ($_.WS/1GB)}}
 $ProcessSelection = 'id', 'PriorityClass', 'ProductVersion', 'Responding', 'StartTime', @{Name='Ticks';Expression={$_.TotalProcessorTime.Ticks}}, @{Name='MemGB';Expression={'{00:N2}' -f ($_.WS/1GB)}}, 'MainWindowTitle', 'Path'
-$DDC2_PSCore_Version = "v2.0c"
+$DDC2_PSCore_Version = "v2.0j"
 ####################################################################################################
 ########################################################################################################################################################################################################
 ##This section Sets the DDC2 Location for execution and sets the correct config and log files to write to.
@@ -130,6 +131,50 @@ if ($LogData -ne "") {
 			}
 		}
 	} 
+}
+$PosArray = [PSCustomObject]@{}
+#$PosArray = New-Object -TypeName PSObject
+#$PosArray = @()
+Function Add-Position {
+param(
+[Parameter(Mandatory=$true)]$POSid,
+[Parameter(Mandatory=$true)]$SRS_X,
+[Parameter(Mandatory=$true)]$SRS_Y,
+[Parameter(Mandatory=$true)]$DCS_X,
+[Parameter(Mandatory=$true)]$DCS_Y,
+[Parameter(Mandatory=$true)]$DCS_SizeX,
+[Parameter(Mandatory=$true)]$DCS_SizeY
+)
+$NewItem = @(
+	[pscustomobject]@{`
+		 POSid = $POSid;`
+		 SRS_X = $SRS_X;`
+		 SRS_Y = $SRS_Y;`
+		 DCS_X = $DCS_X;`
+		 DCS_Y = $DCS_Y;`
+		 DCS_SizeX = $DCS_SizeX;`
+		 DCS_SizeY = $DCS_SizeY}
+)
+return $PosArray + $NewItem
+}
+Function Set-Position {
+param(
+[Parameter(Mandatory=$true)]$Id,
+[switch]$DCS,
+[switch]$SRS
+)
+	If($DesktopLocation -lt $PosArray.Count) {
+		If($SRS) {
+			$locationArray = $PosArray[$DesktopLocation]
+			Set-Window -Id $Id -x $locationArray.SRS_X -y $locationArray.SRS_Y
+			write-log -LogData "SRS Window with ProcessID: $Id has been moved to Desktop Position #$DesktopLocation" -Silent
+		}
+		If($DCS) {
+			$locationArray = $PosArray[$DesktopLocation]
+			Set-Window -Id $Id -x $locationArray.DCS_X -y $locationArray.DCS_Y -Width $locationArray.DCS_SizeX -Height $locationArray.DCS_SizeY
+			write-log -LogData "DCS Window with ProcessID: $Id has been moved to Desktop Position #$DesktopLocation" -Silent
+		}
+	} else {write-log -LogData 'Invalid configurtation for $DesktopLocation, the LocationID given is greater than the array of locations available' -Silent}
 }
 ####################################################################################################
 # Execute the config file
@@ -879,121 +924,197 @@ if($CheckIP) {
 write-log -LogData "New-Firewall-RDPPort Finished"
 }
 Function Set-Window {
-    <#
-        .SYNOPSIS
-            Sets the window size (height,width) and coordinates (x,y) of
-            a process window.
-        .DESCRIPTION
-            Sets the window size (height,width) and coordinates (x,y) of
-            a process window.
-        .PARAMETER ProcessName
-            Name of the process to determine the window characteristics
-        .PARAMETER X
-            Set the position of the window in pixels from the top.
-        .PARAMETER Y
-            Set the position of the window in pixels from the left.
-        .PARAMETER Width
-            Set the width of the window.
-        .PARAMETER Height
-            Set the height of the window.
-        .PARAMETER Passthru
-            Display the output object of the window.
-        .NOTES
-            Name: Set-Window
-            Author: Boe Prox
-            Version History
-                1.0//Boe Prox - 11/24/2015
-                    - Initial build
-        .OUTPUT
-            System.Automation.WindowInfo
-        .EXAMPLE
-            Get-Process powershell | Set-Window -X 2040 -Y 142 -Passthru
-            ProcessName Size     TopLeft  BottomRight
-            ----------- ----     -------  -----------
-            powershell  1262,642 2040,142 3302,784   
-            Description
-            -----------
-            Set the coordinates on the window for the process PowerShell.exe
-        
-    #>
-    [OutputType('System.Automation.WindowInfo')]
-    [cmdletbinding()]
-    Param (
-        [parameter(ValueFromPipelineByPropertyName=$True)]
-        $ProcessName,
-		$ProcessID,
-        [int]$X,
-        [int]$Y,
-        [int]$Width,
-        [int]$Height,
-        [switch]$Passthru
-    )
-    Begin {
-        Try{
-            [void][Window]
-        } Catch {
-        Add-Type @"
-              using System;
-              using System.Runtime.InteropServices;
-              public class Window {
-                [DllImport("user32.dll")]
-                [return: MarshalAs(UnmanagedType.Bool)]
-                public static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
-                [DllImport("User32.dll")]
-                public extern static bool MoveWindow(IntPtr handle, int x, int y, int width, int height, bool redraw);
-              }
-              public struct RECT
-              {
-                public int Left;        // x position of upper-left corner
-                public int Top;         // y position of upper-left corner
-                public int Right;       // x position of lower-right corner
-                public int Bottom;      // y position of lower-right corner
-              }
+<#
+.SYNOPSIS
+Retrieve/Set the window size and coordinates of a process window.
+
+.DESCRIPTION
+Retrieve/Set the size (height,width) and coordinates (x,y) 
+of a process window.
+
+.PARAMETER ProcessName
+Name of the process to determine the window characteristics. 
+(All processes if omitted).
+
+.PARAMETER Id
+Id of the process to determine the window characteristics. 
+
+.PARAMETER X
+Set the position of the window in pixels from the left.
+
+.PARAMETER Y
+Set the position of the window in pixels from the top.
+
+.PARAMETER Width
+Set the width of the window.
+
+.PARAMETER Height
+Set the height of the window.
+
+.PARAMETER Passthru
+Returns the output object of the window.
+
+.NOTES
+Name:   Set-Window
+Author: Boe Prox
+Version History:
+    1.0//Boe Prox - 11/24/2015 - Initial build
+    1.1//JosefZ   - 19.05.2018 - Treats more process instances 
+                                 of supplied process name properly
+    1.2//JosefZ   - 21.02.2019 - Parameter Id
+
+.OUTPUTS
+None
+System.Management.Automation.PSCustomObject
+System.Object
+
+.EXAMPLE
+Get-Process powershell | Set-Window -X 20 -Y 40 -Passthru -Verbose
+VERBOSE: powershell (Id=11140, Handle=132410)
+
+Id          : 11140
+ProcessName : powershell
+Size        : 1134,781
+TopLeft     : 20,40
+BottomRight : 1154,821
+
+Description: Set the coordinates on the window for the process PowerShell.exe
+
+.EXAMPLE
+$windowArray = Set-Window -Passthru
+WARNING: cmd (1096) is minimized! Coordinates will not be accurate.
+
+    PS C:\>$windowArray | Format-Table -AutoSize
+
+  Id ProcessName    Size     TopLeft       BottomRight  
+  -- -----------    ----     -------       -----------  
+1096 cmd            199,34   -32000,-32000 -31801,-31966
+4088 explorer       1280,50  0,974         1280,1024    
+6880 powershell     1280,974 0,0           1280,974     
+
+Description: Get the coordinates of all visible windows and save them into the
+             $windowArray variable. Then, display them in a table view.
+
+.EXAMPLE
+Set-Window -Id $PID -Passthru | Format-Table
+​‌‍
+  Id ProcessName Size     TopLeft BottomRight
+  -- ----------- ----     ------- -----------
+7840 pwsh        1024,638 0,0     1024,638
+
+Description: Display the coordinates of the window for the current 
+             PowerShell session in a table view.
+             
+
+     
+#>
+[cmdletbinding(DefaultParameterSetName='Name')]
+Param (
+    [parameter(Mandatory=$False,
+        ValueFromPipelineByPropertyName=$True, ParameterSetName='Name')]
+    [string]$ProcessName='*',
+    [parameter(Mandatory=$True,
+        ValueFromPipeline=$False,              ParameterSetName='Id')]
+    [int]$Id,
+    [int]$X,
+    [int]$Y,
+    [int]$Width,
+    [int]$Height,
+    [switch]$Passthru
+)
+Begin {
+    Try { 
+        [void][Window]
+    } Catch {
+    Add-Type @"
+        using System;
+        using System.Runtime.InteropServices;
+        public class Window {
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool GetWindowRect(
+            IntPtr hWnd, out RECT lpRect);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public extern static bool MoveWindow(  
+            IntPtr handle, int x, int y, int width, int height, bool redraw);
+              
+        [DllImport("user32.dll")] 
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool ShowWindow(
+            IntPtr handle, int state);
+        }
+        public struct RECT
+        {
+        public int Left;        // x position of upper-left corner
+        public int Top;         // y position of upper-left corner
+        public int Right;       // x position of lower-right corner
+        public int Bottom;      // y position of lower-right corner
+        }
 "@
-        }
     }
-    Process {
-        $Rectangle = New-Object RECT
-		if(-not $ProcessID -eq $null) {
-			$Handle = (Get-Process -Id $ProcessID).MainWindowHandle
-		} else {
-			$Handle = (Get-Process -Name $ProcessName).MainWindowHandle
-		}
-		
-        $Return = [Window]::GetWindowRect($Handle,[ref]$Rectangle)
-        If (-NOT $PSBoundParameters.ContainsKey('Width')) {            
-            $Width = $Rectangle.Right - $Rectangle.Left            
+}
+Process {
+    $Rectangle = New-Object RECT
+    If ( $PSBoundParameters.ContainsKey('Id') ) {
+        $Processes = Get-Process -Id $Id -ErrorAction SilentlyContinue
+    } else {
+        $Processes = Get-Process -Name "$ProcessName" -ErrorAction SilentlyContinue
+    }
+    if ( $null -eq $Processes ) {
+        If ( $PSBoundParameters['Passthru'] ) { 
+            Write-Warning 'No process match criteria specified'
         }
-        If (-NOT $PSBoundParameters.ContainsKey('Height')) {
-            $Height = $Rectangle.Bottom - $Rectangle.Top
-        }
-        If ($Return) {
-            $Return = [Window]::MoveWindow($Handle, $x, $y, $Width, $Height,$True)
-        }
-        If ($PSBoundParameters.ContainsKey('Passthru')) {
-            $Rectangle = New-Object RECT
+    } else {
+        $Processes | ForEach-Object {
+            $Handle = $_.MainWindowHandle
+            Write-Verbose "$($_.ProcessName) `(Id=$($_.Id), Handle=$Handle`)"
+            if ( $Handle -eq [System.IntPtr]::Zero ) { return }
             $Return = [Window]::GetWindowRect($Handle,[ref]$Rectangle)
-            If ($Return) {
-                $Height = $Rectangle.Bottom - $Rectangle.Top
+            If (-NOT $PSBoundParameters.ContainsKey('X')) {
+                $X = $Rectangle.Left            
+            }
+            If (-NOT $PSBoundParameters.ContainsKey('Y')) {
+                $Y = $Rectangle.Top
+            }
+            If (-NOT $PSBoundParameters.ContainsKey('Width')) {
                 $Width = $Rectangle.Right - $Rectangle.Left
-                $Size = New-Object System.Management.Automation.Host.Size -ArgumentList $Width, $Height
-                $TopLeft = New-Object System.Management.Automation.Host.Coordinates -ArgumentList $Rectangle.Left, $Rectangle.Top
-                $BottomRight = New-Object System.Management.Automation.Host.Coordinates -ArgumentList $Rectangle.Right, $Rectangle.Bottom
-                If ($Rectangle.Top -lt 0 -AND $Rectangle.LEft -lt 0) {
-                    Write-Warning "Window is minimized! Coordinates will not be accurate."
+            }
+            If (-NOT $PSBoundParameters.ContainsKey('Height')) {
+                $Height = $Rectangle.Bottom - $Rectangle.Top
+            }
+            If ( $Return ) {
+                $Return = [Window]::MoveWindow($Handle, $x, $y, $Width, $Height,$True)
+            }
+            If ( $PSBoundParameters['Passthru'] ) {
+                $Rectangle = New-Object RECT
+                $Return = [Window]::GetWindowRect($Handle,[ref]$Rectangle)
+                If ( $Return ) {
+                    $Height      = $Rectangle.Bottom - $Rectangle.Top
+                    $Width       = $Rectangle.Right  - $Rectangle.Left
+                    $Size        = New-Object System.Management.Automation.Host.Size        -ArgumentList $Width, $Height
+                    $TopLeft     = New-Object System.Management.Automation.Host.Coordinates -ArgumentList $Rectangle.Left , $Rectangle.Top
+                    $BottomRight = New-Object System.Management.Automation.Host.Coordinates -ArgumentList $Rectangle.Right, $Rectangle.Bottom
+                    If ($Rectangle.Top    -lt 0 -AND 
+                        $Rectangle.Bottom -lt 0 -AND
+                        $Rectangle.Left   -lt 0 -AND
+                        $Rectangle.Right  -lt 0) {
+                        Write-Warning "$($_.ProcessName) `($($_.Id)`) is minimized! Coordinates will not be accurate."
+                    }
+                    $Object = [PSCustomObject]@{
+                        Id          = $_.Id
+                        ProcessName = $_.ProcessName
+                        Size        = $Size
+                        TopLeft     = $TopLeft
+                        BottomRight = $BottomRight
+                    }
+                    $Object
                 }
-                $Object = [pscustomobject]@{
-                    ProcessName = $ProcessName
-					ProcessID = $ProcessID
-                    Size = $Size
-                    TopLeft = $TopLeft
-                    BottomRight = $BottomRight
-                }
-                $Object.PSTypeNames.insert(0,'System.Automation.WindowInfo')
-                $Object            
             }
         }
     }
+}
 }
 Function PasswordGenerator {
 $pwd = $null
@@ -1004,42 +1125,49 @@ $pwd = $CharVar[0] + $CharVar[1] + $CharVar[2] +$NumVarPad
 return $pwd
 }
 Function PwdRandomizer {
-
+Param (
+[switch]$SRS,
+[switch]$DCS
+)
 $Config = Get-Config
 	if($EnableRandomizer) {
-		if($ServerPassword) {
-			$SrvPwd = PasswordGenerator
-			Set-Pwd -File $DCS_Config -Search "password" -Pwd $SrvPwd
-		} else {
-			$SrvPwd = ($Config.DCS.password)
+		if($DCS) {
+			if($ServerPassword) {
+				$SrvPwd = PasswordGenerator
+				Set-Pwd -File $DCS_Config -Search "password" -Pwd $SrvPwd
+			} else {
+				$SrvPwd = ($Config.DCS.password)
+			}
+			if($SeperateTAC) {
+				$TacPwd = PasswordGenerator
+				Set-Pwd -File $DCS_Config -Search "password" -Pwd $SrvPwd
+				Set-Pwd -File $TACv_Config -Search "tacviewClientTelemetryPassword" -Pwd $TacPwd
+			} else {
+				$TacPwd = $SrvPwd
+				Set-Pwd -File $TACv_Config -Search "tacviewClientTelemetryPassword" -Pwd $TacPwd
+			}
+			if($SeperateLOT){
+				$BluLOT	= PasswordGenerator
+				Set-Pwd -File $Lot_Config -Search "blue_password" -Pwd $BluLOT
+				$RedLOT	= PasswordGenerator
+				Set-Pwd -File $Lot_Config -Search "red_password" -Pwd $RedLOT
+			} else {
+				$BluLOT	= $BluPwd
+				Set-Pwd -File $Lot_Config -Search "blue_password" -Pwd $BluLOT
+				$RedLOT	= $RedPwd
+				Set-Pwd -File $Lot_Config -Search "red_password" -Pwd $RedLOT
+			}
 		}
-		if($SeperateTAC) {
-			$TacPwd = PasswordGenerator
-			Set-Pwd -File $DCS_Config -Search "password" -Pwd $SrvPwd
-			Set-Pwd -File $TACv_Config -Search "tacviewClientTelemetryPassword" -Pwd $TacPwd
-		} else {
-			$TacPwd = $SrvPwd
-			Set-Pwd -File $TACv_Config -Search "tacviewClientTelemetryPassword" -Pwd $TacPwd
-		}
-		if($SRSPassword) {
-			$BluPwd = PasswordGenerator	#SRS / Generic Blue Side Pwd
-			Set-Pwd -File $SRS_Config -Search "EXTERNAL_AWACS_MODE_BLUE_PASSWORD" -Pwd $BluPwd
-			$RedPwd = PasswordGenerator #SRS / Generic Red Side Pwd
-			Set-Pwd -File $SRS_Config -Search "EXTERNAL_AWACS_MODE_RED_PASSWORD" -Pwd $RedPwd
-		} else {
-			$BluPwd = ($Config.srs.EXTERNAL_AWACS_MODE_BLUE_PASSWORD) #SRS / Generic Blue Side Pwd
-			$RedPwd = ($Config.srs.EXTERNAL_AWACS_MODE_RED_PASSWORD) #SRS / Generic Red Side Pwd
-		}
-		if($SeperateLOT){
-			$BluLOT	= PasswordGenerator
-			Set-Pwd -File $Lot_Config -Search "blue_password" -Pwd $BluLOT
-			$RedLOT	= PasswordGenerator
-			Set-Pwd -File $Lot_Config -Search "red_password" -Pwd $RedLOT
-		} else {
-			$BluLOT	= $BluPwd
-			Set-Pwd -File $Lot_Config -Search "blue_password" -Pwd $BluLOT
-			$RedLOT	= $RedPwd
-			Set-Pwd -File $Lot_Config -Search "red_password" -Pwd $RedLOT
+		if($SRS) {
+			if($SRSPassword) {
+				$BluPwd = PasswordGenerator	#SRS / Generic Blue Side Pwd
+				Set-Pwd -File $SRS_Config -Search "EXTERNAL_AWACS_MODE_BLUE_PASSWORD" -Pwd $BluPwd
+				$RedPwd = PasswordGenerator #SRS / Generic Red Side Pwd
+				Set-Pwd -File $SRS_Config -Search "EXTERNAL_AWACS_MODE_RED_PASSWORD" -Pwd $RedPwd
+			} else {
+				$BluPwd = ($Config.srs.EXTERNAL_AWACS_MODE_BLUE_PASSWORD) #SRS / Generic Blue Side Pwd
+				$RedPwd = ($Config.srs.EXTERNAL_AWACS_MODE_RED_PASSWORD) #SRS / Generic Red Side Pwd
+			}
 		}
 	}
 }
@@ -1155,7 +1283,67 @@ if ($Found) {
 	}
 #return $rtn
 }
+Function Set-Priority {
+[CmdletBinding()]
+param (
+[Parameter(Mandatory=$true)][string]$ProcessID,
+[ValidateSet("Idle", "BelowNormal", "Normal", "AboveNormal", "HighPriority", "RealTime")]
+[Parameter(Mandatory=$true)][string]$Priority
+)
 
+switch ($Priority){
+"Idle"         {[uint32]$priorityin =    64; break}
+"BelowNormal"  {[uint32]$priorityin = 16384; break}
+"Normal"       {[uint32]$priorityin =    32; break}
+"AboveNormal"  {[uint32]$priorityin = 32768; break}
+"HighPriority" {[uint32]$priorityin =   128; break}
+"RealTime"     {[uint32]$priorityin =   256; break}
+}
+#write-host "Get-CimInstance -ClassName Win32_Process -Filter `"ProcessID = $ProcessID`" | Invoke-CimMethod -MethodName SetPriority -Arguments @{Priority = $priorityin}"
+$shh = Get-CimInstance -ClassName Win32_Process -Filter "ProcessID = $ProcessID" | Invoke-CimMethod -MethodName SetPriority -Arguments @{Priority = $priorityin}
+}
+Function Wait-For-Response {
+param(
+[Parameter(Mandatory=$true)]$Id,
+[Parameter(Mandatory=$true)]$LoopString,
+[Parameter(Mandatory=$true)]$MaxWait,
+[Parameter(Mandatory=$true)]$SleepingTime,
+[Parameter(Mandatory=$true)]$Checks
+)
+<# 
+Example: 
+
+Wait-For-Response -Id 1234 -LoopString "START-DCS: DCS Server" -MaxWait 300 -SleepingTime 1 -Checks 5
+This will monitor Process with ID 1234, each log write will have $LoopString variable at the start, The timeout for this command is 300 seconds, each loop takes 1 second, and it is looking for 5 consecutive 
+
+#>
+$WaitReturn = $false
+$Responding = 0
+$sleepTime = 0
+$contLoop = $true
+	while ($contLoop) {
+		start-sleep $SleepingTime
+		$sleepTime = $sleepTime + $SleepingTime
+		$_func_ProcessCheck = Get-Process -Id $Id
+		if($_func_ProcessCheck.Responding) {
+			$Responding = $Responding + 1
+		} else {
+			if($Responding -ne 0) {
+				write-log -LogData "$LoopString Process stopped Responding, resetting Check to 0" -Silent
+				$Responding = 0
+			}
+		}
+		if($Responding -ge $Checks) {
+			write-log -LogData "$LoopString, Process Responded $Responding / $Checks consecutive checks" -Silent
+			$WaitReturn = $true
+			$contLoop = $false
+		} else {
+			if($Responding -ne 0) {write-log -LogData "$LoopString Process Responding, $Responding / $Checks consecutive checks" -Silent}
+		}
+		if($sleepTime -ge $MaxWait) {$contLoop = $false}
+	}
+return $WaitReturn
+}
 ########################################################################################################################################################################################################
 #SERVER DATA COLLECTION#################################################################################################################################################################################
 ########################################################################################################################################################################################################
@@ -1233,10 +1421,14 @@ Function Get-ServerInfo {
 	$Get_ServerInfo | Add-Member -MemberType NoteProperty -Name UpdateLoop -Value $UPDATE_LOOP_DELAY		#Item Pulled from ddc2_config.ps1	
 	$Get_ServerInfo | Add-Member -MemberType NoteProperty -Name PwdRandomizer -Value $PwdRandomizer			#Item Pulled from ddc2_config.ps1	
 	$Get_ServerInfo | Add-Member -MemberType NoteProperty -Name AutoStartonUpdate -Value $AutoStartonUpdate	#Item Pulled from ddc2_config.ps1
+	$Get_ServerInfo | Add-Member -MemberType NoteProperty -Name AUTOSTART_WAIT -Value $AUTOSTART_DCS_WAIT	#Item Pulled from ddc2_config.ps1
 	$Get_ServerInfo | Add-Member -MemberType NoteProperty -Name AutoUpdateDCS -Value $UPDATE_DCS			#Item Pulled from ddc2_config.ps1
 	$Get_ServerInfo | Add-Member -MemberType NoteProperty -Name AutoUpdateSRS -Value $UPDATE_SRS			#Item Pulled from ddc2_config.ps1
 	$Get_ServerInfo | Add-Member -MemberType NoteProperty -Name AutoUpdateLoT -Value $UPDATE_LoT			#Item Pulled from ddc2_config.ps1
 	$Get_ServerInfo | Add-Member -MemberType NoteProperty -Name AutoUpdateMoose -Value $UPDATE_MOOSE		#Item Pulled from ddc2_config.ps1
+	$Get_ServerInfo | Add-Member -MemberType NoteProperty -Name DesktopPosition -Value $DesktopLocation		#Item Pulled from ddc2_config.ps1
+	$Get_ServerInfo | Add-Member -MemberType NoteProperty -Name DCS_STARTDELAY -Value $DCS_SERVERSTART		#Item Pulled from ddc2_config.ps1
+	$Get_ServerInfo | Add-Member -MemberType NoteProperty -Name DDC2_MASTER -Value $DDC2_MASTER				#Item Pulled from ddc2_config.ps1
 	$Get_ServerInfo | Add-Member -MemberType NoteProperty -Name LoTBETA -Value $LoTBETA						#Item Pulled from ddc2_config.ps1
 	$Get_ServerInfo | Add-Member -MemberType NoteProperty -Name LotBuild -Value $Lot_Release				#Item Pulled from ddc2_config.ps1
 	$Get_ServerInfo | Add-Member -MemberType NoteProperty -Name SRSBETA -Value $SRSBETA						#Item Pulled from ddc2_config.ps1	
@@ -1697,19 +1889,20 @@ $ServerStatus | Add-Member -MemberType NoteProperty -Name LastBootUpString -Valu
 #START DCS
 $check = 0
 $contLoop = $true
+$DCS = $null
 while ($contLoop) {
 	$DCS = Get-Process -ErrorAction SilentlyContinue | where {$_.MainWindowTitle -eq $DCS_WindowTitle -and $_.Path -eq $dcsEXE} | select $ProcessSelection
 	#$DCS = Get-Process -ErrorAction SilentlyContinue | where {$_.CommandLine -match "-w $DCS_WindowTitle" -and $_.Path -eq $dcsEXE} | select $ProcessSelection
 	if($DCS.count -gt 0) {
 		if($DCS.Responding) {
-			write-log -LogData "DCS is Responding" -Silent
+			#write-log -LogData "DCS is Responding" -Silent
 			$contLoop = $false
 		} else {
 			$check = $check + 1
 			write-log -LogData "DCS Failed to respond $check / 10 times" -Silent
 		}
 	} else {
-		write-log -LogData "DCS isn't Running" -Silent
+		#write-log -LogData "DCS isn't Running" -Silent
 		$contLoop = $false
 	}
 if ($check -ge 10) {
@@ -1731,9 +1924,6 @@ if(test-path $Lot_Entry) {
 	$LotATC_Version = 'NOT INSTALLED'
 	$LotATC_INSTALLED = $false
 	}
-	
-	$SRS | Add-Member -MemberType NoteProperty -Name Version -Value $LotATC_Version
-	$SRS | Add-Member -MemberType NoteProperty -Name Installed -Value $LotATC_INSTALLED
 if($DCS.count -eq 0) {
 	$DCS = New-Object -TypeName psobject 
 	$DCS | Add-Member -MemberType NoteProperty -Name Name -Value "DCS"
@@ -1762,8 +1952,11 @@ if($DCS.count -eq 0) {
 	$DCS | Add-Member -MemberType NoteProperty -Name Handles -Value ($DCS_Additional.Handles)
 	$DCS.StartTime = ((get-date $DCS.StartTime).DateTime)
 	}
-#START SRS	
-$SRS = Get-Process -Name SR-Server -ErrorAction SilentlyContinue | where {$_.Path -eq $srsEXE}| Select-Object $ProcessSelection
+#START SRS
+$SRS = $null
+$SRS = Get-Process -ErrorAction SilentlyContinue | where {$_.CommandLine -match "-cfg=`"$srsCONFIGFile`"" -and $_.Path -eq $srsEXE} | select $ProcessSelection
+$SRS | Add-Member -MemberType NoteProperty -Name Version -Value $LotATC_Version
+$SRS | Add-Member -MemberType NoteProperty -Name Installed -Value $LotATC_INSTALLED
 if(test-path $srsEXE) {
 	$SRS_Version = (Get-ChildItem $srsEXE).VersionInfo.ProductVersion
 	$SRS_INSTALLED = $true
@@ -1774,8 +1967,8 @@ if(test-path $srsEXE) {
 if($SRS.count -eq 0) {
 	$SRS = New-Object -TypeName psobject 
 	$SRS | Add-Member -MemberType NoteProperty -Name Name -Value "SRS"
-	$SRS | Add-Member -MemberType NoteProperty -Name Version -Value $SRS_Version
-	$SRS | Add-Member -MemberType NoteProperty -Name Installed -Value $SRS_INSTALLED	
+	$SRS | Add-Member -MemberType NoteProperty -Name Version -Value $SRS_Version -Force
+	$SRS | Add-Member -MemberType NoteProperty -Name Installed -Value $SRS_INSTALLED -Force	
 	$SRS | Add-Member -MemberType NoteProperty -Name IsActive -Value $false
 	$SRS | Add-Member -MemberType NoteProperty -Name Offline -Value $true
 	$SRS | Add-Member -MemberType NoteProperty -Name ClientsEnabled -Value $false
@@ -1783,8 +1976,8 @@ if($SRS.count -eq 0) {
 else {
 	$SRS_Additional = Get-CimInstance -ClassName Win32_PerfFormattedData_PerfProc_Process | where {$_.IDProcess -eq ($SRS.Id)} | Select-Object $properties
 	$SRS | Add-Member -MemberType NoteProperty -Name Name -Value "SRS"
-	$SRS | Add-Member -MemberType NoteProperty -Name Version -Value $SRS_Version
-	$SRS | Add-Member -MemberType NoteProperty -Name Installed -Value $SRS_INSTALLED		
+	$SRS | Add-Member -MemberType NoteProperty -Name Version -Value $SRS_Version -Force
+	$SRS | Add-Member -MemberType NoteProperty -Name Installed -Value $SRS_INSTALLED -Force		
 	$SRS | Add-Member -MemberType NoteProperty -Name IsActive -Value $true
 	$SRS | Add-Member -MemberType NoteProperty -Name Offline -Value $false
 	if($SRS.Responding) {
@@ -1793,15 +1986,15 @@ else {
 		$SRS | Add-Member -MemberType NoteProperty -Name Status -Value "Not Responding"
 	}
 	$SRS | add-Member -MemberType NoteProperty -Name Ports -Value (StringOutPorts -Id $SRS.id)
-	$SRS | Add-Member -MemberType NoteProperty -Name RunTime -Value ((get-date) - $SRS.StartTime)
+	$SRS_RT = ((get-date) - (get-date $SRS.StartTime))
+	$SRS | Add-Member -MemberType NoteProperty -Name RunTime -Value $SRS_RT
 	$SRS | Add-Member -MemberType NoteProperty -Name CPULoad -Value ($SRS_Additional.CPU)
 	$SRS | Add-Member -MemberType NoteProperty -Name Threads -Value ($SRS_Additional.Threads)
 	$SRS | Add-Member -MemberType NoteProperty -Name Handles -Value ($SRS_Additional.Handles)
 	$SRS.StartTime = ((get-date $SRS.StartTime).DateTime)
-	$SRS | Add-Member -MemberType NoteProperty -Name ClientsEnabled -Value $false
-	if(test-path $srsClients) {
-		$SRS.ClientsEnabled = $true
-		$ClientTable = ((gc $srsClients) | ConvertFrom-Json -Depth 100).Clients
+	if(test-path $SRS_Clients) {
+		$SRS | Add-Member -MemberType NoteProperty -Name ClientsEnabled -Value $true
+		$ClientTable = ((gc $SRS_Clients) | ConvertFrom-Json -Depth 100).Clients
 		if ($ClientTable.Count -ne 0) {
 			$SRS | Add-Member -MemberType NoteProperty -Name ClientTable -Value $ClientTable
 			$SRS | Add-Member -MemberType NoteProperty -Name ClientsPresent -Value $true
@@ -1809,10 +2002,12 @@ else {
 			$SRS | Add-Member -MemberType NoteProperty -Name ClientsPresent -Value $false
 		}
 		$SRS | Add-Member -MemberType NoteProperty -Name ClientCount -Value ($ClientTable.Count)
+		} else {
+			$SRS | Add-Member -MemberType NoteProperty -Name ClientsEnabled -Value $false
 		}
 	}
-#START DCS UPDATE	
-$DCS_Upd = (Get-Process -ErrorAction SilentlyContinue | where {$_.Path -eq $DCS_Updater}| Select-Object $ProcessSelection | Sort-Object -Property Ticks -Descending)[0]
+#START DCS UPDATE
+$DCS_Upd = Get-Process -ErrorAction SilentlyContinue | where {$_.Path -eq $DCS_Updater}| Select-Object $ProcessSelection
 if($DCS_Upd.count -eq 0) {
 	$DCS_Upd = New-Object -TypeName psobject 
 	$DCS_Upd | Add-Member -MemberType NoteProperty -Name Name -Value "DCS Updater"
@@ -1820,6 +2015,7 @@ if($DCS_Upd.count -eq 0) {
 	$DCS_Upd | Add-Member -MemberType NoteProperty -Name Offline -Value $true
 	}
 else {
+	$DCS_Upd = ($DCS_Upd | Sort-Object -Property Ticks -Descending)[0]
 	$Updating = $true
 	$DCS_Upd_Additional = Get-CimInstance -ClassName Win32_PerfFormattedData_PerfProc_Process | where {$_.IDProcess -eq ($DCS_Upd.Id)} | Select-Object $properties
 	$DCS_Upd | Add-Member -MemberType NoteProperty -Name Name -Value "DCS Updater"
@@ -1961,7 +2157,7 @@ $ChkGame = $null
 $ChkGame = New-Object -TypeName psobject
 $network = get-nettcpconnection -ErrorAction SilentlyContinue | Select-Object local*,remote*,state,@{Name="Process";Expression={(Get-Process -Id $_.OwningProcess).ProcessName}}
 $DCS = Get-Process -Name DCS -ErrorAction SilentlyContinue | where {$_.MainWindowTitle -eq $DCS_WindowTitle -and $_.Path -eq $dcsEXE} | Select-Object $selection 
-$SRS = Get-Process -Name SR-Server -ErrorAction SilentlyContinue | where {$_.Path -eq $srsEXE}| Select-Object $selection
+$SRS = Get-Process -ErrorAction SilentlyContinue | where {$_.CommandLine -match "-cfg=`"$srsCONFIGFile`"" -and $_.Path -eq $srsEXE} | select $ProcessSelection
 
 $processor = Get-CimInstance -ClassName Win32_Processor
 $system = Get-CimInstance -Class Win32_OperatingSystem
@@ -1994,9 +2190,9 @@ else {
 	$SRS | Add-Member -MemberType NoteProperty -Name RunTime -Value ((get-date) - $SRS.StartTime)
 	$SRS | Add-Member -MemberType NoteProperty -Name IsActive -Value $true
 	$SRS.StartTime = ((get-date $SRS.StartTime).DateTime)
-	if(test-path $srsClients) {
+	if(test-path $SRS_Clients) {
 		$SRS | Add-Member -MemberType NoteProperty -Name ClientsEnabled -Value $true
-		$SRS | Add-Member -MemberType NoteProperty -Name ClientTable -Value ((gc $srsClients) | ConvertFrom-Json -Depth 100)
+		$SRS | Add-Member -MemberType NoteProperty -Name ClientTable -Value ((gc $SRS_Clients) | ConvertFrom-Json -Depth 100)
 		$SRS | Add-Member -MemberType NoteProperty -Name ClientCount -Value ($SRS.ClientTable.Clients.Count)
 	} else {
 		$SRS | Add-Member -MemberType NoteProperty -Name ClientsEnabled -Value $false
@@ -2034,7 +2230,6 @@ Function InitializeDDC2 {
 	$DDC2 | Add-Member -MemberType NoteProperty -Name Permissions -Value $CMDPerms	#Item Pulled from ddc2_config.ps1
 	$DDC2 | Add-Member -MemberType NoteProperty -Name Channel -Value $Channel		#Item Pulled from ddc2_config.ps1
 	$DDC2 | Add-Member -MemberType NoteProperty -Name Status -Value $Status
-	!status ddc2-dev
 return $DDC2
 }
 
@@ -2103,7 +2298,7 @@ Function Find-Link {
 <#
 This function will get a websites data and output a single link for download
 
-e.g. Find-Link -URI "https://github.com/FlightControl-Master/MOOSE/releases/latest" -Search '/moose.lua'
+e.g. Find-Link -URI "https://github.com/FlightControl-Master/MOOSE/releases/latest" -Search '/moose_.lua'
 
 Will return the first value it finds only
 #>
@@ -2114,7 +2309,8 @@ Param (
 $webpage = Invoke-WebRequest -Uri $URI
 $URISplit = $URI.Split('/')
 $rootDomain = $URISplit[0]+'//'+$URISplit[2]  #Gets Website root for any HREF
-$LinkPath = (($webpage.Links.href) -match '/Moose.lua')[0]
+#$LinkPath = (($webpage.Links.href) -match '/Moose_.lua')[0]
+$LinkPath = (($webpage.Links.href) -match $Search)[0]
 if($LinkPath.Count -ne 0) {$rtn = $rootDomain + $LinkPath} else {$rtn = $false}
 return $rtn
 }
@@ -2127,7 +2323,9 @@ write-log -LogData "Starting MOOSE Update Process..." -Silent
 	$DLPath = "$DDC2DIR\Downloads\MOOSE.LUA"
 	$MOOSE_ArchiveROOT = "$DDC2DIR\Archive\MOOSE.LUA"
 	$MOOSE_Leaf = (split-path $MOOSE_Path -leaf)
-	$DwnLd = Find-Link -URI "https://github.com/FlightControl-Master/MOOSE/releases/latest" -Search '/moose.lua'
+	#$DwnLd = Find-Link -URI "https://github.com/FlightControl-Master/MOOSE_INCLUDE/tree/master/Moose_Include_Static" -Search '/moose_.lua'
+	#$DwnLd = Find-Link -URI "https://github.com/FlightControl-Master/MOOSE/releases/latest" -Search '/moose_.lua'
+	$DwnLd = "https://github.com/FlightControl-Master/MOOSE_INCLUDE/raw/master/Moose_Include_Static/Moose_.lua"
 	write-log -LogData "Preparing to download $DwnLd" -silent
 		if(test-path $DLPath) {
 			write-log -LogData "Downloading..." -silent
@@ -2197,27 +2395,32 @@ write-log -LogData "Starting MOOSE Update Process..." -Silent
 Function Update-Server {
 $DoUpdate = $true
 $ServerStatus = $null
-
+write-log -LogData "Update-Server: STARTED" -Silent
 $DCS = Get-Process -ErrorAction SilentlyContinue | where {$_.MainWindowTitle -eq $DCS_WindowTitle -and $_.Path -eq $dcsEXE} | select $ProcessSelection
 #$DCS = Get-Process -ErrorAction SilentlyContinue | where {$_.CommandLine -match "-w $DCS_WindowTitle" -and $_.Path -eq $dcsEXE} | select $ProcessSelection
 	if($DCS.count -ne 0) {
 	$DoUpdate = $false
+	write-log -LogData "Update-Server: DCS is running, Update Aborted!" -Silent
 	}
-$SRS = Get-Process -Name SR-Server -ErrorAction SilentlyContinue | where {$_.Path -eq $srsEXE}| Select-Object $ProcessSelection
+$SRS = Get-Process -ErrorAction SilentlyContinue | where {$_.Path -eq $srsEXE}| Select-Object $ProcessSelection
 	if($SRS.count -ne 0) {
 	$DoUpdate = $false
+	write-log -LogData "Update-Server: SRS is running, Update Aborted!" -Silent
 	}
-$DCS_Upd = Get-Process -Name SR-Server -ErrorAction SilentlyContinue | where {$_.Path -eq $DCS_Updater}| Select-Object $ProcessSelection
+$DCS_Upd = Get-Process -ErrorAction SilentlyContinue | where {$_.Path -eq $DCS_Updater}| Select-Object $ProcessSelection
 	if($DCS_Upd.count -ne 0) {
 	$DoUpdate = $false
+	write-log -LogData "Update-Server: DCS Updater is already running, Update Aborted!" -Silent
 	}
-$SRS_Upd = Get-Process -Name SR-Server -ErrorAction SilentlyContinue | where {$_.Path -eq $SRS_Updater}| Select-Object $ProcessSelection
+$SRS_Upd = Get-Process -ErrorAction SilentlyContinue | where {$_.Path -eq $SRS_Updater}| Select-Object $ProcessSelection
 	if($SRS_Upd.count -ne 0) {
 	$DoUpdate = $false
+	write-log -LogData "Update-Server: SRS Updater is already running, Update Aborted!" -Silent
 	}
-$LoT_Upd = Get-Process -Name SR-Server -ErrorAction SilentlyContinue | where {$_.Path -eq $LoT_Updater}| Select-Object $ProcessSelection
+$LoT_Upd = Get-Process -ErrorAction SilentlyContinue | where {$_.Path -eq $LoT_Updater}| Select-Object $ProcessSelection
 	if($LoT_Upd.count -ne 0) {
 	$DoUpdate = $false
+	write-log -LogData "Update-Server: LotATC Updater is already running, Update Aborted!" -Silent
 	}
 	if($DoUpdate) {
 	$PowerShellEXE = "C:\Program Files\PowerShell\7\pwsh.exe"
@@ -2225,9 +2428,7 @@ $LoT_Upd = Get-Process -Name SR-Server -ErrorAction SilentlyContinue | where {$_
 	write-log "COMMAND BEING EXECUTED BY Update-Server: start-process $PowerShellEXE -ArgumentList $UpdateARGS -WorkingDirectory $DDC2DIR" -silent
 	start-process $PowerShellEXE -ArgumentList $UpdateARGS -WorkingDirectory $DDC2DIR
 	}
-start-sleep 3;
-$ServerStatus = Get-Status
-return $ServerStatus
+write-log -LogData "Update-Server: ENDED" -Silent
 }
 Function Do-Update {
 	write-log -LogData "UPDATE DCS: STARTED" -Silent
@@ -2266,7 +2467,7 @@ Function Do-Update {
 	
 	if ($AutoStartonUpdate) {
 		write-log -LogData "UPDATE DCS: Call Restart-DCS" -Silent
-		Start-DCS
+		Start-Server -SRS -DCS
 		}
 	else {
 		write-log -LogData "UPDATE DCS: Restart-DCS Disabled in ddc2_config.ps1, DCS not restarted" -Silent
@@ -2282,83 +2483,141 @@ Function Restart-DCS {
 write-log -LogData "Restart-DCS: STARTED" -Silent
 write-log -LogData "Restart-DCS: Calling Stop-DCS" -Silent
 	Stop -Game
-write-log -LogData "Restart-DCS: Calling Start-DCS" -Silent	
-	Start-DCS
+write-log -LogData "Restart-DCS: Calling Start-Server" -Silent	
+	Start-Server -SRS -DCS
 write-log -LogData "Restart-DCS: ENDED" -Silent
 }
-Function Start-DCS {
-$Running = $false	
-$Updating = $false	
-$DCS = Get-Process -ErrorAction SilentlyContinue | where {$_.MainWindowTitle -eq $DCS_WindowTitle -and $_.Path -eq $dcsEXE} | select $ProcessSelection
-#$DCS = Get-Process -ErrorAction SilentlyContinue | where {$_.CommandLine -match "-w $DCS_WindowTitle" -and $_.Path -eq $dcsEXE} | select $ProcessSelection	
-	if($DCS.count -ne 0) {
-		$Running = $true
-	}
-$SRS = Get-Process  -ErrorAction SilentlyContinue | where {$_.Path -eq $srsEXE}| Select-Object $ProcessSelection
-	if($SRS.count -ne 0) {
-		$Running = $true
-	}
-$DCS_Upd = Get-Process -ErrorAction SilentlyContinue | where {$_.Path -eq $DCS_Updater}| Select-Object $ProcessSelection
-	if($DCS_Upd.count -ne 0) {
-		$Updating = $true
-	}
-$SRS_Upd = Get-Process -ErrorAction SilentlyContinue | where {$_.Path -eq $SRS_Updater}| Select-Object $ProcessSelection
-	if($SRS_Upd.count -ne 0) {
-		$Updating = $true
-	}
-$LoT_Upd = Get-Process -ErrorAction SilentlyContinue | where {$_.Path -eq $LoT_Updater}| Select-Object $ProcessSelection
-	if($LoT_Upd.count -ne 0) {
-		$Updating = $true
-	}
-	if(-not $Updating -and -not $Running) {
-		$PriorityArray = @{Priority        = [Int32](128)}
-		if($EnableRandomizer) {PwdRandomizer}
-		write-log -LogData "Start-DCS: STARTED" -Silent
-		write-log -LogData "Starting DCS" -Silent
-		start-process $dcsexe -ArgumentList $dcsargs -WorkingDirectory $dcsdir
-		write-log -LogData "Starting SRS" -Silent
-		start-process $srsexe -WorkingDirectory $srsdir
-		$checkLoop = 0
-		$sleepTime = 0
-		$contLoop = $true
-		while ($contLoop) {
-		$DCS = Get-Process -ErrorAction SilentlyContinue | where {$_.MainWindowTitle -eq $DCS_WindowTitle -and $_.Path -eq $dcsEXE} | select $ProcessSelection
-		Start-sleep 1;
-		$sleepTime = $sleepTime + 1
-		if($DCS.count -gt 0) {
-			if($DCS.Responding) {
-				$checkLoop = $checkLoop + 1
-			} else {
-				if($checkLoop -ne 0) {
-					write-log -LogData "DCS stopped Responding, resetting DCS Response Check to 0" -Silent
-					$checkLoop = 0
-				}
-			}
-		}
-		if($sleepTime -eq 4) {
-			write-log -LogData "Setting Priority for DCS" -Silent
-			$shh = Get-CimInstance -ClassName win32_process -Filter 'name = "DCS.exe"' | Invoke-CimMethod -MethodName SetPriority -Arguments $PriorityArray
-			write-log -LogData "Setting Priority for SRS" -Silent
-			$shh = Get-CimInstance -ClassName win32_process -Filter 'name = "SR-Server.exe"' | Invoke-CimMethod -MethodName SetPriority -Arguments $PriorityArray
-		}
-		
-		if($checkLoop -ge 10 -and $checkLoop -ne 0) {
-			write-log -LogData "DCS Response Check - $checkLoop / 10 consecutive checks" -Silent
-			write-log -LogData "DCS Response Check Loop Finished" -Silent
-			$contLoop = $false
+Function DDC2-AutoStart {
+<#
+Designed as a global start command that then calls other start functions
+
+Checks if this instance of the server is the MASTER for this server and then acts accordingly depending on the startup variables set in ddc2_config.ps1
+
+Variables required
+
+$DDC2_MASTER	- This boolean variable says if the update functions are to be run or skipped on this instance
+$AUTOSTART_DCS_WAIT 	- This is how long this particular instance will wait until it attempts an initialization after the server starts (note, if you have more than 2 instances running on a server, DDC2 will start at the same time unless this number is changed.
+e.g.
+Instance1 - $DDC2_MASTER = $True #this means the Instance wait is ignored as this is the master server
+
+Instance2 - $DDC2_MASTER = $False #This defines this instance as a subordinate server
+Instance2 - $AUTOSTART_DCS_WAIT = 60 #This tells Instance2 to autostart DCS 1 minute after no update processes have been detected 
+
+Instance3 - $DDC2_MASTER = $False #This defines this instance as a subordinate server
+Instance3 - $AUTOSTART_DCS_WAIT = 120 #This tells Instance3 to autostart DCS 2 minute after no update processes have been detected 
+
+If ! $DDC2_MASTER then {Server will check if there are updates currently taking place and wait. Wait time will be 30 seconds then another check will take place. no update process has been detected, d
+
+#>
+write-log -LogData "DDC2-AutoStart: STARTED" -Silent
+	if($DDC2_MASTER) {
+		write-log -LogData "DDC2-AutoStart: $ServerID is the Master Server Instance" -Silent
+		if($AUTOSTART_UPDATE) {
+			write-log -LogData "DDC2-AutoStart: $ServerID Initiating Update-Server" -Silent
+			Update-Server
 		} else {
-			if($checkLoop -ne 0) {write-log -LogData "DCS Response Check - $checkLoop / 10 consecutive checks" -Silent}
+			if($AUTOSTART_DCS) {
+				write-log -LogData "DDC2-AutoStart: $ServerID Initiating Start-Server" -Silent
+				Start-Server -SRS -DCS
 			}
 		}
-		Start-sleep 10;
-		Set-Window -ProcessName DCS -ProcessID $DCS.id  -x 150 -y 25 -Width 160 -Height 120
-		Set-Window -ProcessName SR-Server -ProcessID $SRS.id -x 305 -y 25
-		write-log -LogData "Start-DCS: ENDED" -Silent
-		###Add DCS Firewall Rules here
 	} else {
-		if($Updating) {write-log -LogData "Start-DCS: ENDED - Update Running" -Silent}
-		if($Running) {write-log -LogData "Start-DCS: ENDED - DCS already Running" -Silent}
+		$contLoop = $true
+		$AutoStartLoopCount = 0
+		$Updating = $false
+		write-log -LogData "DDC2-AutoStart: $ServerID is a Subordinate Server Instance" -Silent
+		write-log -LogData "DDC2-AutoStart: $ServerID Initiating wait for Master Server" -Silent
+		while ($contLoop) {
+			start-sleep $AUTOSTART_DCS_WAIT
+			$DCS_Upd = Get-Process -ErrorAction SilentlyContinue | where {$_.Path -eq $DCS_Updater}| Select-Object $ProcessSelection
+			$SRS_Upd = Get-Process -ErrorAction SilentlyContinue | where {$_.Path -eq $SRS_Updater}| Select-Object $ProcessSelection
+			$LoT_Upd = Get-Process -ErrorAction SilentlyContinue | where {$_.Path -eq $LoT_Updater}| Select-Object $ProcessSelection
+			if(($DCS_Upd.count -ne 0) -or ($SRS_Upd.count -ne 0) -or ($LoT_Upd.count -ne 0)) {$Updating = $true}
+			if(-not $Updating) {$contLoop = $FALSE}
+			$AutoStartLoopCount = $AutoStartLoopCount + 1
+			write-log -LogData "DDC2-AutoStart: $ServerID still waiting for Master Server updating to complete, Loop# $AutoStartLoopCount" -Silent
+		}
+		write-log -LogData "DDC2-AutoStart: $ServerID has detected the Master Server has completed all updates." -Silent
+		if($AUTOSTART_DCS) {
+			write-log -LogData "DDC2-AutoStart: $ServerID Initiating Start-Server" -Silent
+			Start-Server -SRS -DCS
+		}
 	}
+write-log -LogData "DDC2-AutoStart: ENDED" -Silent
+}
+Function Start-SRS {
+write-log -LogData "Start-SRS: STARTED" -Silent
+$_func_SRS_Upd = Get-Process -ErrorAction SilentlyContinue | where {$_.Path -eq $SRS_Updater}| Select-Object $ProcessSelection
+	if ($_func_SRS_Upd.count -eq 0) {
+		if($EnableRandomizer) {PwdRandomizer -SRS}
+		write-log -LogData "Start-SRS: Starting SRS" -Silent
+		$shh = start-process $srsexe -ArgumentList $SRSargs -WorkingDirectory $srsdir
+		start-sleep 0.5
+		$_func_StartSRS = Get-Process -ErrorAction SilentlyContinue | where {$_.CommandLine -match "-cfg=`"$srsCONFIGFile`"" -and $_.Path -eq $srsEXE} | select $ProcessSelection
+		start-sleep 0.5
+		if($_func_StartSRS.count -ne 0) {
+			$_func_Check = Wait-For-Response -id $_func_StartSRS.ID -LoopString "START-SRS: SRS Server" -MaxWait 10 -SleepingTime 0.5 -Checks 3
+			if($_func_Check) {
+				write-log -LogData "Start-SRS: SRS has been Started" -Silent
+				write-log -LogData "Start-SRS: Setting Priority" -Silent
+				Set-Priority -ProcessID $_func_StartSRS.ID -Priority $SERVER_PRIORITY
+				Set-Position -Id $_func_StartSRS.ID -SRS
+			} else {write-log -LogData "Start-SRS: ERROR!! SRS did not start, please check the SRS log file for more information" -Silent}
+		} else {write-log -LogData "Start-SRS: ERROR!! SRS did not start, please check the SRS log file for more information" -Silent}
+	} else {write-log -LogData "Start-SRS: SRS Update process detected, Start-SRS Aborted!!" -Silent}
+write-log -LogData "Start-SRS: ENDED" -Silent
+}
+Function Start-DCS {
+write-log -LogData "Start-DCS: STARTED" -Silent
+$_func_DCS_Upd = Get-Process -ErrorAction SilentlyContinue | where {$_.Path -eq $DCS_Updater}| Select-Object $ProcessSelection
+$_func_LoT_Upd = Get-Process -ErrorAction SilentlyContinue | where {$_.Path -eq $LoT_Updater}| Select-Object $ProcessSelection
+if(($_func_DCS_Upd.count -eq 0) -and ($_func_LoT_Upd.count -eq 0)) {
+	if($EnableRandomizer) {PwdRandomizer -DCS}
+	write-log -LogData "Start-DCS: Starting DCS" -Silent
+	$shh = start-process $dcsexe -ArgumentList $dcsargs -WorkingDirectory $dcsdir
+	start-sleep 5
+	$_func_StartDCS = Get-Process -ErrorAction SilentlyContinue | where {$_.MainWindowTitle -eq $DCS_WindowTitle -and $_.Path -eq $dcsEXE} | select $ProcessSelection
+	$_func_IDCount = 0
+	while(($_func_StartDCS.count -eq 0) -or ($_func_IDCount -ge $DCS_SERVERSTART))  {
+	start-sleep 1
+	$_func_IDCount = $_func_IDCount + 1
+	$_func_StartDCS = Get-Process -ErrorAction SilentlyContinue | where {$_.MainWindowTitle -eq $DCS_WindowTitle -and $_.Path -eq $dcsEXE} | select $ProcessSelection
+	}
+	write-log -LogData "Start-DCS: Finally got a ProcessID after $_func_IDCount seconds" -Silent
+	if($_func_StartDCS.count -ne 0) {
+			$_func_Check = Wait-For-Response -id $_func_StartDCS.ID -LoopString "START-DCS: DCS Server" -MaxWait $DCS_SERVERSTART -SleepingTime 1 -Checks 5
+			if($_func_Check) {
+				write-log -LogData "Start-DCS: DCS has been Started" -Silent
+				write-log -LogData "Start-DCS: Setting Priority" -Silent
+				Set-Priority -ProcessID $_func_StartDCS.ID -Priority $SERVER_PRIORITY
+				Set-Position -Id $_func_StartDCS.ID -DCS
+			} else {write-log -LogData "Start-DCS: ERROR!! DCS did not start, please check the DCS log file for more information" -Silent}
+		} else {write-log -LogData "Start-DCS: ERROR!! DCS did not start, please check the DCS log file for more information" -Silent}
+	} else {write-log -LogData "Start-DCS: DCS Update process detected, Start-DCS Aborted!!" -Silent}
+write-log -LogData "Start-DCS: ENDED" -Silent
+}
+Function Start-Server {
+Param (
+[switch]$SRS,
+[switch]$DCS
+)
+write-log -LogData "Start-Server: STARTED" -Silent
+if($SRS) {
+		$_func_SRS = Get-Process -ErrorAction SilentlyContinue | where {$_.CommandLine -match "-cfg=`"$srsCONFIGFile`"" -and $_.Path -eq $srsEXE} | select $ProcessSelection
+		if($_func_SRS.count -eq 0) {
+			write-log -LogData "Start-Server: CALLING Start-SRS" -Silent
+			Start-SRS			
+		} else {write-log -LogData "Start-Server: SRS already running, Start-SRS Aborted" -Silent}
+} else {write-log -LogData "Start-Server: DCS Startup Not Requested, Start-DCS Aborted" -Silent}
+################################################################################################
+if($DCS) {
+		$_func_DCS = Get-Process -ErrorAction SilentlyContinue | where {$_.MainWindowTitle -eq $DCS_WindowTitle -and $_.Path -eq $dcsEXE} | select $ProcessSelection
+		if($_func_DCS.count -eq 0) {
+			write-log -LogData "Start-Server: CALLING Start-DCS" -Silent
+			Start-DCS			
+		} else {write-log -LogData "Start-Server: DCS already running, Start-DCS Aborted" -Silent}
+} else {write-log -LogData "Start-Server: DCS Startup Not Requested, Start-DCS Aborted" -Silent}
+write-log -LogData "Start-Server: ENDED" -Silent
 }
 Function Stop {
 param(
@@ -2382,7 +2641,7 @@ Function Stop-DCS {
 }
 Function Stop-SRS {
 	write-log -LogData "Stop-SRS: STARTED" -Silent
-	$SRS = Get-Process -ErrorAction SilentlyContinue | where {$_.Path -eq $srsEXE}| Select-Object $ProcessSelection
+	$SRS = Get-Process -ErrorAction SilentlyContinue | where {$_.CommandLine -match "-cfg=`"$srsCONFIGFile`"" -and $_.Path -eq $srsEXE} | select $ProcessSelection
 	write-log -LogData 'FORCE Stopping SRS...' -Silent
 	$SRS | stop-process -Force
 	write-log -LogData "Stop-SRS: ENDED" -Silent
@@ -2448,15 +2707,17 @@ return $RadioData
 #EXECUTION SECTION######################################################################################################################################################################################
 ########################################################################################################################################################################################################
 #Server & DCS Control Commands
-if ($Start) {
-	Start-DCS
+if ($AutoStart) {
+	DDC2-AutoStart
 	$DCSreturn = get-status
-	#$DCSreturn = InitializeDDC2
+	}
+if ($Start) {
+	Start-Server -SRS -DCS
+	$DCSreturn = get-status
 	}
 if ($Restart) {
 	Restart-DCS
 	$DCSreturn = get-status
-	#$DCSreturn = InitializeDDC2
 	}
 if ($Stop) {
 	#This is where the different stop commands are run depending on the switches recieved from Node-Red, Default action is set in the Node-Red Stop Function Pre-Processing Node.
@@ -2468,7 +2729,7 @@ if ($Stop) {
 	$DCSreturn = get-status
 	}
 if ($Update) {
-	$DCSreturn = Update-Server
+	Update-Server
 	$DCSreturn = get-status
 	}
 if ($DoUpdate) {
