@@ -53,7 +53,7 @@ Discord: OzDeaDMeaT#0240
 
 [OzDeaDMeaT's YouTube](https://www.youtube.com/ozdeadmeat "OzDeaDMeaT's YouTube")
 
-
+## All commercial use requests please sent to ozdeadmeat@gmail.com ##
 
 ## Special Thanks - ##
 
