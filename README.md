@@ -29,7 +29,7 @@ Thanks for taking the time to try out DDC2. Here are some useful links to keep u
 
 [DDC2 Eagle Dynamics Forum Thread](https://forums.eagle.ru/topic/241221-introduction-to-discord-to-dcs-server-command-control-ddc2/ "DDC2 Eagle Dynamics Forum Thread")
 
-[DDC2 KAMBAN](https://trello.com/b/NerHUp2T/ddc2 "DDC2 KAMBAN")
+[DDC2 KANBAN](https://trello.com/b/NerHUp2T/ddc2 "DDC2 KANBAN")
 
 [DDC2 Support Discord](https://discord.com/invite/AZtE9Ew "DDC2 Support Discord")
 
