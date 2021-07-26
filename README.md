@@ -57,6 +57,8 @@ Discord: OzDeaDMeaT#0240
 
 ## Special Thanks - ##
 
+__EpicNinjaCheese__ for his knowledge on all things DCS LUA.
+
 __Wedgie__ for his knowledge of Node-Red and integration expertise.
 
 __Zyfr__ for his wealth of knowledge regarding all things DCS and LUA.
