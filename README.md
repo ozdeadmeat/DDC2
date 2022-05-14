@@ -1,6 +1,12 @@
 # DDC2
 ## Discord to DCS Command and Control 2.0j Stable Release##
 
+IMPORTANT NOTE: for 2.0j of DDC2 to work correctly you must install a previous version of the discord contrib. To install this please open and admin powershell window and execute the following.
+
+
+__npm install node-red-contrib-discord@4.0.3__
+
+
 NOTE: Only ddc2.ps1 file was updated in this hotfix release, no need to update ddc2_config.ps1 or Node-Red Flow
 
 New Instructions:
