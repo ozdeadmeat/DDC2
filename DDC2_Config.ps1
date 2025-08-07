@@ -77,21 +77,21 @@ $VNCPort = "11116"
 $VNCType = "RealVNC"
 #HostedBy Information
 $HostedByMember = $TRUE 																		#If this is set to TRUE it will display contact info for the person hosting the server rather than just the Name element
-$HostedByName = "OzDeaDMeaT" 																	#Name of person paying for or providing the hosting
-$HostedAT = "OzDeaDMeaT's House" 																#Name of person or Organisation Hosting the server (AWS, Azure, etc etc)
-$DiscordID = '<@183573224565506048>' 															#Use single quotes, DISCORD ID of Host
+$HostedByName = "<name>" 																	#Name of person paying for or providing the hosting
+$HostedAT = "<location>" 																#Name of person or Organisation Hosting the server (AWS, Azure, etc etc)
+$DiscordID = '<@<DISCORDID>>' 															#Use single quotes, DISCORD ID of Host
 
 #Suport Contact Info
 $SupportByMember = $TRUE																		#If this is set to TRUE it will display contact info for the person supporting the server rather than just the data element
-$SupportContactID = '<@1046358657639649392>' 														#Use single quotes, DISCORD ID of Host
-$SupportBy = "OzDeaDMeaT" 																		#Name of person supporting the server (if SupportedByMember is set to True
+$SupportContactID = '<@<DISCORDID>>' 														#Use single quotes, DISCORD ID of Host
+$SupportBy = "<name>" 																		#Name of person supporting the server (if SupportedByMember is set to True
 $SupportTimeTXT = "The channel is checked daily between 6pm and 10pm AEST."						#Times when Support channel is being actively manned.
 $SupportContactTXT = "Please post a detailed description of the issue you are experiencing in the #server-support channel and someone will get back to you." 	#Text for support request when requested in the wrong channel.
 
 #ISP Information
 $ISP = "Aussie Broadband"
 $NetSpeed = '500Mbps / 200Mbps'
-$DNSName = "dcs.ozdeadmeat.com"
+$DNSName = "<url>"
 
 ########################################################################################################################################################################################################
 #SRS TEXT TO SPEECH CONFIGURATION SECTION#################################################################################################################################################################
@@ -218,24 +218,24 @@ $SRS_Updater_Args 	= if($SRSBETA) {"-beta","-server","-path=$srsDIR"} else {"-se
 #DISCORD CHANNEL.ID CONFIGURATION SECTION###############################################################################################################################################################
 ########################################################################################################################################################################################################
 #DISCORD GUIDE ID
-$GuildID = "1045621898584805416"
+$GuildID = "00000000000000000000"
 
 #DISCORD GROUP ID's (Note, you can have as many groups as you want here)
-$BluForGrp = "1045625922436464650"; 			#BlueForce       - (Info Only User Group)
-$RedForGrp = "1045625922436464650";				#RedForce		 - (Info Only User Group)
-$PwrUsrGrp = "1046358950683103242"; 			#Server Power Users  - (Server Power User Group)
-$AdminGrp = "1046358657639649392"; 				#Server Admnins      - (Server Admin User Group)
+$BluForGrp = "00000000000000000000"; 			#BlueForce       - (Info Only User Group)
+$RedForGrp = "00000000000000000000";				#RedForce		 - (Info Only User Group)
+$PwrUsrGrp = "00000000000000000000"; 			#Server Power Users  - (Server Power User Group)
+$AdminGrp = "00000000000000000000"; 				#Server Admnins      - (Server Admin User Group)
 
 #DISCORD CHANNEL ID's
-$AdminChannel = "1047076082551115816"; 			#For Admin Messages ONLY
+$AdminChannel = "00000000000000000000"; 			#For Admin Messages ONLY
 $BlueChannel = "00000000000000000000"; 			#For Blue Force Messages ONLY
 $RedChannel = "00000000000000000000"; 			#For Red Force Messages ONLY
-$LogChannel = "1046404887438696568"; 			#For Log Messages ONLY
+$LogChannel = "00000000000000000000"; 			#For Log Messages ONLY
 $SupportChannel = "00000000000000000000";		#For support requests ONLY
-$ServerStatusMessage = "1047089267756761118";	#This is the message ID that will be updated with the servers current status
-$ServerStatusChannel = "1045624163039186966";	#Displays Notifications for servers (NOTIFICATIONS CHANNEL)
-$ServerNotifications = "1045624414399627305";	#This channel will keep a running log of what is going on in your server. Take off, connected etc events.
-$ServerChatChannel = "1143810998826958933";		#This channel will allow people to chat via text message between the discord and DCS.
+$ServerStatusMessage = "00000000000000000000";	#This is the message ID that will be updated with the servers current status
+$ServerStatusChannel = "00000000000000000000";	#Displays Notifications for servers (NOTIFICATIONS CHANNEL)
+$ServerNotifications = "00000000000000000000";	#This channel will keep a running log of what is going on in your server. Take off, connected etc events.
+$ServerChatChannel = "00000000000000000000";		#This channel will allow people to chat via text message between the discord and DCS.
 
 ########################################################################################################################################################################################################
 #DISCORD PERMISSIONS PER DDC2 COMMAND###################################################################################################################################################################
